@@ -1,0 +1,31 @@
+{
+    "name": "djinorm/djin-repo-sql",
+    "description": "Djin PDO SQL repository skeleton",
+    "keywords": [
+        "djin",
+        "repository",
+        "sql"
+    ],
+    "authors": [
+        {
+            "name": "Timur Kasumov aka XAKEPEHOK",
+            "role": "Main developer"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "djinorm/djin": "^1.0",
+        "phpunit/dbunit": "^3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {"DjinORM\\Repositories\\Sql\\": "src"}
+    },
+    "autoload-dev": {
+        "psr-4": {"DjinORM\\Repositories\\Sql\\tests\\": "tests"}
+    },
+    "type": "library",
+    "license": "BSD-3-Clause"
+}

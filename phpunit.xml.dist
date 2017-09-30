@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php"
+         backupGlobals="false"
+         backupStaticAttributes="false"
+         colors="true"
+         verbose="true"
+         convertErrorsToExceptions="true"
+         convertNoticesToExceptions="true"
+         convertWarningsToExceptions="true"
+         processIsolation="false"
+         stopOnFailure="false">
+    <testsuites>
+        <testsuite name="DjinORM Repo SQL">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <filter>
+        <whitelist>
+            <directory suffix=".php">src/</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <var name="MYSQL_DB_DSN" value="mysql:host=localhost;port=3306;dbname=djintest;" />
+        <var name="MYSQL_DB_USER" value="root" />
+        <var name="MYSQL_DB_PASSWD" value="" />
+        <var name="MYSQL_DB_DBNAME" value="djintest" />
+    </php>
+</phpunit>
