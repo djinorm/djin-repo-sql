@@ -111,6 +111,8 @@ class MySqlRepositoryTest extends TestCase
         /** @noinspection PhpUndefinedFieldInspection */
         $this->assertEquals(1, $this->repo->whereFiltered);
 
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertNull($this->repo->findOneByCondition(['id' => 777]));
     }
 
     public function testFindByCondition()

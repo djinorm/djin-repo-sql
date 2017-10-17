@@ -90,7 +90,7 @@ abstract class SqlRepository extends Repository implements RepositoryInterface
         $data = $this->prepareAndExecute($sql, array_values($condition))->fetch();
 
         $this->queryCount++;
-        return $this->populate($data);
+        return $data ? $this->populate($data) : null;
     }
 
     /**
