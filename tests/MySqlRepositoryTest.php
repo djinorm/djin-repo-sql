@@ -4,13 +4,12 @@
  * Datetime: 30.09.2017 21:10
  */
 
-namespace DjinORM\Repositories\Sql\tests;
+namespace DjinORM\Repositories\Sql;
 
 use DjinORM\Djin\Helpers\RepoHelper;
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Model\ModelTrait;
-use DjinORM\Repositories\Sql\MySqlRepository;
 use PDO;
 use PHPUnit\DbUnit\DataSet\ArrayDataSet;
 use PHPUnit\DbUnit\TestCase;
@@ -383,7 +382,7 @@ class MySqlRepositoryTest extends TestCase
                 ];
             }
 
-            protected static function getModelClass(): string
+            public static function getModelClass(): string
             {
                 return get_class(self::$modelExample);
             }

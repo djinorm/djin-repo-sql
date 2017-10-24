@@ -14,7 +14,7 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "djinorm/djin": "^1.0",
+        "djinorm/djin": "^2.0",
         "phpunit/dbunit": "^3.0"
     },
     "require-dev": {
@@ -24,7 +24,7 @@
         "psr-4": {"DjinORM\\Repositories\\Sql\\": "src"}
     },
     "autoload-dev": {
-        "psr-4": {"DjinORM\\Repositories\\Sql\\tests\\": "tests"}
+        "psr-4": {"DjinORM\\Repositories\\Sql\\": "tests"}
     },
     "type": "library",
     "license": "BSD-3-Clause"
