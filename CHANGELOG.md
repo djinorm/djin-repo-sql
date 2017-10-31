@@ -1,22 +1,11 @@
 # Changelog
 
-All notable changes to `:package_name` will be documented in this file.
-
 Updates should follow the [Keep a CHANGELOG](http://keepachangelog.com/) principles.
 
-## NEXT - YYYY-MM-DD
+## 2.0.0 - 2017-10-31
 
 ### Added
-- Nothing
+- MySQL mappers: DateTimeMapper
 
-### Deprecated
-- Nothing
-
-### Fixed
-- Nothing
-
-### Removed
-- Nothing
-
-### Security
-- Nothing
+### Changed
+- Namespace `\DjinORM\Repositories\Sql\MySqlRepository` to `\DjinORM\Repositories\Sql\MySQL\MySqlRepository`

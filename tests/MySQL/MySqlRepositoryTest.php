@@ -4,7 +4,7 @@
  * Datetime: 30.09.2017 21:10
  */
 
-namespace DjinORM\Repositories\Sql;
+namespace DjinORM\Repositories\Sql\MySQL;
 
 use DjinORM\Djin\Helpers\RepoHelper;
 use DjinORM\Djin\Id\Id;
