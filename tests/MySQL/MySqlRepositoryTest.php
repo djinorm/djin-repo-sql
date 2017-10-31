@@ -1,13 +1,16 @@
 <?php
 /**
- * @author Timur Kasumov (aka XAKEPEHOK)
+ * Created for djin-repo-sql.
  * Datetime: 30.09.2017 21:10
+ * @author Timur Kasumov (aka XAKEPEHOK)
  */
 
 namespace DjinORM\Repositories\Sql\MySQL;
 
-use DjinORM\Djin\Helpers\RepoHelper;
-use DjinORM\Djin\Id\Id;
+use DjinORM\Djin\Mappers\IdMapper;
+use DjinORM\Djin\Mappers\IntMapper;
+use DjinORM\Djin\Mappers\MapperInterface;
+use DjinORM\Djin\Mappers\StringMapper;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Model\ModelTrait;
 use PDO;
@@ -356,32 +359,6 @@ class MySqlRepositoryTest extends TestCase
                 $this->tableName = $tableName;
             }
 
-            protected function hydrate(array $data): ModelInterface
-            {
-                /** @var ModelInterface $object */
-                $object = RepoHelper::newWithoutConstructor($this->getModelClass());
-                $object->id = new Id($data['id']);
-                $object->name = $data['name'];
-                $object->group_1 = $data['group_1'];
-                $object->group_2 = $data['group_2'];
-                $object->increment = $data['increment'];
-                $object->not_increment = $data['not_increment'];
-                return $object;
-            }
-
-            protected function extract(ModelInterface $object): array
-            {
-                /** @noinspection PhpUndefinedFieldInspection */
-                return [
-                    'id' => $object->getId()->toScalar(),
-                    'name' => $object->name,
-                    'group_1' => $object->group_1,
-                    'group_2' => $object->group_2,
-                    'increment' => $object->increment,
-                    'not_increment' => $object->not_increment,
-                ];
-            }
-
             public static function getModelClass(): string
             {
                 return get_class(self::$modelExample);
@@ -403,6 +380,20 @@ class MySqlRepositoryTest extends TestCase
                 return parent::whereFilter($sql);
             }
 
+            /**
+             * @return MapperInterface[]
+             */
+            protected function map(): array
+            {
+                return [
+                    new IdMapper('id'),
+                    new StringMapper('name'),
+                    new StringMapper('group_1'),
+                    new StringMapper('group_2'),
+                    new IntMapper('increment'),
+                    new IntMapper('not_increment'),
+                ];
+            }
         };
     }
 }

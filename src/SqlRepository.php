@@ -1,6 +1,6 @@
 <?php
 /**
- * Created for LeadVertex 2.0.
+ * Created for djin-repo-sql.
  * Datetime: 19.04.2017 2:39
  * @author Timur Kasumov aka XAKEPEHOK
  */
@@ -10,12 +10,12 @@ namespace DjinORM\Repositories\Sql;
 use DjinORM\Djin\Helpers\DjinHelper;
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Model\ModelInterface;
-use DjinORM\Djin\Repository\Repository;
+use DjinORM\Djin\Repository\MapperRepository;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use PDO;
 use PDOStatement;
 
-abstract class SqlRepository extends Repository implements RepositoryInterface
+abstract class SqlRepository extends MapperRepository implements RepositoryInterface
 {
 
     /** @var PDO */
