@@ -9,7 +9,6 @@ namespace DjinORM\Repositories\Sql\MySQL\Mappers;
 
 use DjinORM\Djin\Exceptions\ExtractorException;
 use DjinORM\Djin\Exceptions\HydratorException;
-use DjinORM\Djin\Mappers\ScalarMapper;
 use DjinORM\Djin\TestHelpers\MapperTestCase;
 
 class DatetimeMapperTest extends MapperTestCase
@@ -39,12 +38,12 @@ class DatetimeMapperTest extends MapperTestCase
         $this->assertExtracted(null, null, $this->getMapperDisallowNull());
     }
 
-    protected function getMapperAllowNull(): ScalarMapper
+    protected function getMapperAllowNull(): DatetimeMapper
     {
         return new DatetimeMapper('value', 'value', true);
     }
 
-    protected function getMapperDisallowNull(): ScalarMapper
+    protected function getMapperDisallowNull(): DatetimeMapper
     {
         return new DatetimeMapper('value', 'value', false);
     }
