@@ -7,50 +7,36 @@
 
 namespace DjinORM\Repositories\Sql\MySQL\Mappers;
 
+use DjinORM\Djin\Exceptions\ExtractorException;
+use DjinORM\Djin\Exceptions\HydratorException;
 use DjinORM\Djin\Mappers\ScalarMapper;
-use DjinORM\Djin\TestHelpers\MockForMapperTest;
-use DjinORM\Djin\TestHelpers\ScalarMapperTestCase;
+use DjinORM\Djin\TestHelpers\MapperTestCase;
 
-class DatetimeMapperTest extends ScalarMapperTestCase
+class DatetimeMapperTest extends MapperTestCase
 {
 
-    public function setUp()
+    public function testHydrate()
     {
-        $this->testClassValue = new class(new \DateTime('2017-10-31 12:47')) extends MockForMapperTest{
-            /** @var \DateTimeInterface */
-            public $value;
+        $this->assertHydrated(null, null, $this->getMapperAllowNull());
+        $this->assertHydrated('', null, $this->getMapperAllowNull());
+        $this->assertHydrated('2017-11-02', new \DateTimeImmutable('2017-11-02'), $this->getMapperAllowNull());
+        $this->assertHydrated('2017-11-02 11:43', new \DateTimeImmutable('2017-11-02 11:43'), $this->getMapperAllowNull());
+        $this->assertHydrated('2017-11-02 11:43:15', new \DateTimeImmutable('2017-11-02 11:43:15'), $this->getMapperAllowNull());
 
-            public function getScalarValue()
-            {
-                return $this->value ? $this->value->format('Y-m-d H:i:s') : null;
-            }
-        };
-
-        $this->testClassNull = new class() extends MockForMapperTest {
-            /** @var \DateTimeInterface */
-            public $value;
-
-            public function getScalarValue()
-            {
-                return $this->value ? $this->value->format('Y-m-d H:i:s') : null;
-            }
-        };
+        $this->expectException(HydratorException::class);
+        $this->assertHydrated(null, null, $this->getMapperDisallowNull());
     }
 
-    public function testGetFixtures()
+    public function testExtract()
     {
-        $this->assertGetFixtures([
-            '2001-01-01 01:01:01',
-            '2002-02-02 02:02:02',
-            '2003-03-03 03:03:03',
-            '2004-04-04 04:04:04',
-            '2005-05-05 05:05:05',
-        ]);
-    }
+        $this->assertExtracted(null, null, $this->getMapperAllowNull());
+        $this->assertExtracted('', null, $this->getMapperAllowNull());
+        $this->assertExtracted(new \DateTimeImmutable('2017-11-02'), '2017-11-02 00:00:00', $this->getMapperAllowNull());
+        $this->assertExtracted(new \DateTimeImmutable('2017-11-02 11:43'), '2017-11-02 11:43:00', $this->getMapperAllowNull());
+        $this->assertExtracted(new \DateTimeImmutable('2017-11-02 11:43:15'), '2017-11-02 11:43:15', $this->getMapperAllowNull());
 
-    protected function getTestClassValue()
-    {
-        return true;
+        $this->expectException(ExtractorException::class);
+        $this->assertExtracted(null, null, $this->getMapperDisallowNull());
     }
 
     protected function getMapperAllowNull(): ScalarMapper

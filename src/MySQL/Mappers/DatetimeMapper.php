@@ -35,7 +35,8 @@ class DatetimeMapper extends ScalarMapper
     public function hydrate(array $data, $object): ?DateTimeInterface
     {
         $column = $this->getDbColumn();
-        if (!isset($data[$column])) {
+
+        if (!isset($data[$column]) || $data[$column] === '') {
             if ($this->isAllowNull()) {
                 RepoHelper::setProperty($object, $this->getModelProperty(), null);
                 return null;
@@ -54,7 +55,7 @@ class DatetimeMapper extends ScalarMapper
         /** @var DateTimeInterface $datetime */
         $datetime = RepoHelper::getProperty($object, $this->getModelProperty());
 
-        if ($datetime === null) {
+        if ($datetime === null || $datetime === '') {
             if ($this->isAllowNull() == false) {
                 throw $this->nullExtractorException($this->getClassName(), $object);
             }
@@ -66,23 +67,6 @@ class DatetimeMapper extends ScalarMapper
         return [
             $this->getDbColumn() => $datetime->format('Y-m-d H:i:s')
         ];
-    }
-
-    public function getFixtures(): array
-    {
-        $fixtures = [
-            '2001-01-01 01:01:01',
-            '2002-02-02 02:02:02',
-            '2003-03-03 03:03:03',
-            '2004-04-04 04:04:04',
-            '2005-05-05 05:05:05',
-        ];
-
-        if ($this->isAllowNull()) {
-            $fixtures[] = null;
-        }
-
-        return $fixtures;
     }
 
     protected function getClassName(): string
