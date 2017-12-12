@@ -14,8 +14,8 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "djinorm/djin": "^2.5.0",
-        "phpunit/dbunit": "^3.0"
+        "phpunit/dbunit": "^3.0",
+        "djinorm/djin": "^3.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0"
