@@ -142,6 +142,44 @@ class MySqlRepositoryTest extends TestCase
         $this->assertEquals(1, $this->repo->whereFiltered);
     }
 
+    public function testFindOneBySql()
+    {
+        $model = $this->repo->findOneBySql('id = :id AND name = :name', [
+            'id' => 2,
+            'name' => 'second'
+        ]);
+        $this->assertEquals(2, $model->getId()->toScalar());
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals('second', $model->name);
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertNull($this->repo->findOneByCondition(['id' => 777]));
+    }
+
+    public function testFindBySql()
+    {
+        $models = $this->repo->findBySql("group_1 = 'gr2' AND group_2 = 'gr3'");
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+
+        $this->assertCount(2, $models);
+        $this->assertEquals(3, $models[0]->getId()->toScalar());
+        $this->assertEquals(4, $models[1]->getId()->toScalar());
+    }
+
+    public function testCountBySql()
+    {
+        $this->assertEquals(3, $this->repo->countBySql("group_2 = 'gr3'"));
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+    }
+
     public function testFindAll()
     {
         $models = $this->repo->findAll();
@@ -234,11 +272,6 @@ class MySqlRepositoryTest extends TestCase
 
         $repo = $this->createRepo();
         $this->assertEquals(3, $repo->countAll());
-    }
-
-    public function testIsTransactional()
-    {
-        $this->assertEquals('boolean', gettype($this->repo->isTransactional()));
     }
 
     ###############################################################################################

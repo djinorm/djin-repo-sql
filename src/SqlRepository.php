@@ -113,6 +113,39 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         return (int) $this->prepareAndExecute($sql, array_values($condition))->fetchColumn();
     }
 
+    public function findOneBySql(string $sqlWhere, array $params = []): ?ModelInterface
+    {
+        $sql = $this->buildSqlSelectQuery(null, $sqlWhere, 1);
+        $data = $this->prepareAndExecute($sql, $params)->fetch();
+        $this->queryCount++;
+        return $data ? $this->populate($data) : null;
+    }
+
+    /**
+     * @param string $sqlWhere
+     * @param array $params
+     * @return ModelInterface[]
+     */
+    public function findBySql(string $sqlWhere, array $params = []): array
+    {
+        $sql = $this->buildSqlSelectQuery(null, $sqlWhere);
+        $dataArray = $this->prepareAndExecute($sql, $params)->fetchAll();
+        $this->queryCount++;
+        return $this->populateArray($dataArray);
+    }
+
+    /**
+     * @param string $sqlWhere
+     * @param array $params
+     * @return int
+     */
+    public function countBySql(string $sqlWhere, array $params = []): int
+    {
+        $sql = $this->buildSqlSelectQuery("COUNT(*)", $sqlWhere);
+        $this->queryCount++;
+        return (int) $this->prepareAndExecute($sql, $params)->fetchColumn();
+    }
+
     /**
      * @return ModelInterface[]
      */
@@ -178,11 +211,6 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         unset($this->models[$model->getId()->toScalar()]);
         unset($this->rawData[$model->getId()->toScalar()]);
         unset($model);
-    }
-
-    public function isTransactional(): bool
-    {
-        return true;
     }
 
     abstract protected function getTableName(): string;
