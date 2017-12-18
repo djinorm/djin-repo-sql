@@ -77,12 +77,22 @@ class MySqlRepositoryTest extends TestCase
         $this->assertNull($this->repo->findById(777));
     }
 
-    public function testFindByIn()
+    public function testFindByInWithoutCondition()
     {
         $models = $this->repo->findByIn('name', ['first', 'fourth']);
         $this->assertCount(2, $models);
         $this->assertEquals(1, $models[0]->getId()->toScalar());
         $this->assertEquals(4, $models[1]->getId()->toScalar());
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+    }
+
+    public function testFindByInWithCondition()
+    {
+        $models = $this->repo->findByIn('name', ['first', 'fourth'], ['group_1' => 'gr1']);
+        $this->assertCount(1, $models);
+        $this->assertEquals(1, $models[0]->getId()->toScalar());
 
         /** @noinspection PhpUndefinedFieldInspection */
         $this->assertEquals(1, $this->repo->whereFiltered);

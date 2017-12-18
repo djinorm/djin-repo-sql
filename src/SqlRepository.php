@@ -53,17 +53,23 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     }
 
     /**
-     * @param $property
+     * @param string $property
      * @param array $values
+     * @param array $andCondition
      * @return ModelInterface[]
      */
-    public function findByIn($property, array $values): array
+    public function findByIn(string $property, array $values, array $andCondition = []): array
     {
         if (empty($values)) return [];
 
         $property = $this->filterColumnName($property);
         $bindings = str_repeat('?,', count($values) - 1) . '?';
         $sql = $this->buildSqlSelectQuery(null, "{$property} IN ({$bindings})");
+
+        if (!empty($andCondition)) {
+            $sql.= " AND " . $this->buildSqlWhereCondition($andCondition);
+            $values = array_merge($values, $andCondition);
+        }
 
         $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
 
