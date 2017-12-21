@@ -13,6 +13,7 @@ use DjinORM\Djin\Mappers\MapperInterface;
 use DjinORM\Djin\Mappers\StringMapper;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Model\ModelTrait;
+use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
 use PDO;
 use PHPUnit\DbUnit\DataSet\ArrayDataSet;
 use PHPUnit\DbUnit\TestCase;
@@ -284,6 +285,19 @@ class MySqlRepositoryTest extends TestCase
         $this->assertEquals(3, $repo->countAll());
     }
 
+    public function testGetSqlOnException()
+    {
+        $this->expectException(PDOExceptionWithSql::class);
+        $model = $this->getNewModelInstance();
+        $model->getId()->setPermanentId(1);
+        $model->name = 'fifth';
+        $model->group_1 = 'gr5';
+        $model->group_2 = 'gr6';
+        $model->increment = 5;
+        $model->not_increment = 5;
+        $this->repo->insert($model);
+    }
+
     ###############################################################################################
 
     public function setUp()
@@ -362,7 +376,8 @@ class MySqlRepositoryTest extends TestCase
              `group_1` VARCHAR(40),
              `group_2` VARCHAR(40),
              `increment` INT,
-             `not_increment` INT
+             `not_increment` INT,
+             PRIMARY KEY (`id`)
            );
         ";
 

@@ -12,6 +12,7 @@ use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\MapperRepository;
 use DjinORM\Djin\Repository\RepositoryInterface;
+use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
 use PDO;
 use PDOStatement;
 
@@ -321,10 +322,21 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         return $sql;
     }
 
+    /**
+     * @param string $sql
+     * @param array $params
+     * @return PDOStatement
+     * @throws \PDOException
+     * @throws PDOExceptionWithSql
+     */
     protected function prepareAndExecute(string $sql, $params = []): PDOStatement
     {
-        $stm = $this->pdo->prepare($sql);
-        $stm->execute($params);
+        try {
+            $stm = $this->pdo->prepare($sql);
+            $stm->execute($params);
+        } catch (\PDOException $exception) {
+            throw new PDOExceptionWithSql($sql, $params, $exception);
+        }
         return $stm;
     }
 
