@@ -79,6 +79,25 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     }
 
     /**
+     * @param string $property
+     * @param array $values
+     * @return ModelInterface[]
+     */
+    public function findByNotIn(string $property, array $values): array
+    {
+        if (empty($values)) return [];
+
+        $property = $this->filterColumnName($property);
+        $bindings = str_repeat('?,', count($values) - 1) . '?';
+        $sql = $this->buildSqlSelectQuery(null, "{$property} NOT IN ({$bindings})");
+
+        $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
+
+        $this->queryCount++;
+        return $this->populateArray($dataArray);
+    }
+
+    /**
      * @param array $ids
      * @return ModelInterface[]
      */
