@@ -114,6 +114,16 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     }
 
     /**
+     * @param array $ids
+     * @param array $andCondition
+     * @return ModelInterface[]
+     */
+    public function findByNotIds(array $ids, array $andCondition = []): array
+    {
+        return $this->findByNotIn($this->getIdName(), $ids, $andCondition);
+    }
+
+    /**
      * @param array $condition
      * @return ModelInterface|null
      */

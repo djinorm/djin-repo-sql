@@ -131,6 +131,17 @@ class MySqlRepositoryTest extends TestCase
         $this->assertEquals(1, $this->repo->whereFiltered);
     }
 
+    public function testFindByNotIds()
+    {
+        $models = $this->repo->findByNotIds([3,4]);
+        $this->assertCount(2, $models);
+        $this->assertEquals('first', $models[0]->name);
+        $this->assertEquals('second', $models[1]->name);
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+    }
+
     public function testFindOneByCondition()
     {
         $model = $this->repo->findOneByCondition([
