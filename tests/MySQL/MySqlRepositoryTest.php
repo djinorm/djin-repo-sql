@@ -99,12 +99,22 @@ class MySqlRepositoryTest extends TestCase
         $this->assertEquals(1, $this->repo->whereFiltered);
     }
 
-    public function testFindByNotIn()
+    public function testFindByNotInWithoutCondition()
     {
         $models = $this->repo->findByNotIn('name', ['first', 'second']);
         $this->assertCount(2, $models);
         $this->assertEquals(3, $models[0]->getId()->toScalar());
         $this->assertEquals(4, $models[1]->getId()->toScalar());
+
+        /** @noinspection PhpUndefinedFieldInspection */
+        $this->assertEquals(1, $this->repo->whereFiltered);
+    }
+
+    public function testFindByNotInWithCondition()
+    {
+        $models = $this->repo->findByNotIn('name', ['first', 'second'], ['id' => 3]);
+        $this->assertCount(1, $models);
+        $this->assertEquals(3, $models[0]->getId()->toScalar());
 
         /** @noinspection PhpUndefinedFieldInspection */
         $this->assertEquals(1, $this->repo->whereFiltered);
