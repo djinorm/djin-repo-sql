@@ -221,6 +221,8 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         $sql = "INSERT INTO {$table} " . $this->buildSqlInsertCondition($data);
         $this->prepareAndExecute($sql, array_values($data));
 
+        $this->rawData[$model->getId()->toScalar()] = $data;
+
         $this->queryCount++;
     }
 
@@ -241,6 +243,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
             $bindings[] = $model->getId()->toScalar();
             $this->prepareAndExecute($sql, $bindings);
             $this->queryCount++;
+            $this->rawData[$model->getId()->toScalar()] = $data;
         }
     }
 

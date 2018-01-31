@@ -7,6 +7,7 @@
 
 namespace DjinORM\Repositories\Sql\MySQL;
 
+use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Mappers\IdMapper;
 use DjinORM\Djin\Mappers\IntMapper;
 use DjinORM\Djin\Mappers\MapperInterface;
@@ -483,6 +484,12 @@ class MySqlRepositoryTest extends TestCase
                     new IntMapper('increment'),
                     new IntMapper('not_increment'),
                 ];
+            }
+
+            public function setPermanentId(ModelInterface $model): Id
+            {
+                $model->getId()->setPermanentId(rand(1, 9999999));
+                return $model->getId();
             }
         };
     }
