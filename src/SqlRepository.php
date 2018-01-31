@@ -48,6 +48,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
 
         $sql = $this->buildSqlSelectQuery(null, $this->getIdName() . ' = :id', 1);
         $data = $this->prepareAndExecute($sql, [':id' => $scalarId])->fetch();
+        $this->onFetchModelData($sql, [':id' => $scalarId], $data);
 
         $this->queryCount++;
         return $data ? $this->populate($data) : null;
@@ -73,6 +74,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         }
 
         $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
+        $this->onFetchModelData($sql, array_values($values), $dataArray);
 
         $this->queryCount++;
         return $this->populateArray($dataArray);
@@ -98,6 +100,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         }
 
         $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
+        $this->onFetchModelData($sql, array_values($values), $dataArray);
 
         $this->queryCount++;
         return $this->populateArray($dataArray);
@@ -131,6 +134,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     {
         $sql = $this->buildSqlSelectQuery(null, $this->buildSqlWhereCondition($condition), 1);
         $data = $this->prepareAndExecute($sql, array_values($condition))->fetch();
+        $this->onFetchModelData($sql, array_values($condition), $data);
 
         $this->queryCount++;
         return $data ? $this->populate($data) : null;
@@ -145,6 +149,8 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
         $sql = $this->buildSqlSelectQuery(null, $this->buildSqlWhereCondition($condition));
 
         $dataArray = $this->prepareAndExecute($sql, array_values($condition))->fetchAll();
+        $this->onFetchModelData($sql, array_values($condition), $dataArray);
+
         $this->queryCount++;
         return $this->populateArray($dataArray);
     }
@@ -160,6 +166,8 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     {
         $sql = $this->buildSqlSelectQuery(null, $sqlWhere, 1);
         $data = $this->prepareAndExecute($sql, $params)->fetch();
+        $this->onFetchModelData($sql, $params, $data);
+
         $this->queryCount++;
         return $data ? $this->populate($data) : null;
     }
@@ -173,6 +181,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     {
         $sql = $this->buildSqlSelectQuery(null, $sqlWhere);
         $dataArray = $this->prepareAndExecute($sql, $params)->fetchAll();
+        $this->onFetchModelData($sql, $params, $dataArray);
         $this->queryCount++;
         return $this->populateArray($dataArray);
     }
@@ -196,6 +205,7 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
     {
         $sql = $this->buildSqlSelectQuery();
         $dataArray = $this->prepareAndExecute($sql)->fetchAll();
+        $this->onFetchModelData($sql, [], $dataArray);
         $this->queryCount++;
         return $this->populateArray($dataArray);
     }
@@ -377,6 +387,11 @@ abstract class SqlRepository extends MapperRepository implements RepositoryInter
             throw new PDOExceptionWithSql($sql, $params, $exception);
         }
         return $stm;
+    }
+
+    protected function onFetchModelData(string $sql, array $params, $data)
+    {
+
     }
 
 }
