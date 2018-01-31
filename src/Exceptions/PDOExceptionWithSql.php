@@ -16,7 +16,7 @@ class PDOExceptionWithSql extends \PDOException
     public function __construct(string $sql, array $params, Throwable $previous)
     {
         $message = 'SQL exception: ' . $sql . PHP_EOL . 'Params: ' . print_r($params, true);
-        parent::__construct($message, $previous->getCode(), $previous);
+        parent::__construct($message, $this->getCode(), $previous);
     }
 
 }
