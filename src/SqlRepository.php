@@ -63,7 +63,7 @@ abstract class SqlRepository implements RepositoryInterface
     public function findById($id): ?ModelInterface
     {
         $select = $this->select()->where('id = :id');
-        $select->bindValue(':id', DjinHelper::getScalarId($id));
+        $select->bindValue('id', DjinHelper::getScalarId($id));
         return $this->fetchAndPopulateOne($select);
     }
 
