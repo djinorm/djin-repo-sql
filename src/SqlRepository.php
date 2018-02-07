@@ -21,7 +21,6 @@ use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
-use PDO;
 use PDOStatement;
 
 abstract class SqlRepository implements RepositoryInterface
@@ -43,7 +42,7 @@ abstract class SqlRepository implements RepositoryInterface
 
     /**
      * Repository constructor.
-     * @param PDO $pdo
+     * @param ExtendedPdo $pdo
      * @param QueryFactory $factory
      * @param IdGeneratorInterface $idGenerator
      */
@@ -174,8 +173,7 @@ abstract class SqlRepository implements RepositoryInterface
     protected function getStatement(QueryInterface $query)
     {
         try {
-            $stm = $this->pdo->prepare($query->getStatement());
-            $stm->execute($query->getBindValues());
+            $stm = $this->pdo->perform($query->getStatement(), $query->getBindValues());
         } catch (\PDOException $exception) {
             throw new PDOExceptionWithSql($query->getStatement(), $query->getBindValues(), $exception);
         }
