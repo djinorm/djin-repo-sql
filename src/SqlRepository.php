@@ -7,403 +7,270 @@
 
 namespace DjinORM\Repositories\Sql;
 
+
+use Aura\Sql\ExtendedPdo;
+use Aura\SqlQuery\Common\DeleteInterface;
+use Aura\SqlQuery\Common\InsertInterface;
+use Aura\SqlQuery\Common\SelectInterface;
+use Aura\SqlQuery\Common\UpdateInterface;
+use Aura\SqlQuery\QueryFactory;
+use Aura\SqlQuery\QueryInterface;
 use DjinORM\Djin\Helpers\DjinHelper;
 use DjinORM\Djin\Id\Id;
+use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Model\ModelInterface;
-use DjinORM\Djin\Repository\MapperRepository;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
 use PDO;
 use PDOStatement;
 
-abstract class SqlRepository extends MapperRepository implements RepositoryInterface
+abstract class SqlRepository implements RepositoryInterface
 {
 
-    /** @var PDO */
+    /** @var IdGeneratorInterface */
+    protected $idGenerator;
+    /**
+     * @var ExtendedPdo
+     */
     protected $pdo;
+    /**
+     * @var QueryFactory
+     */
+    protected $builder;
+
+    /** @var ModelInterface[] */
+    protected $models;
 
     /**
      * Repository constructor.
      * @param PDO $pdo
+     * @param QueryFactory $factory
+     * @param IdGeneratorInterface $idGenerator
      */
-    public function __construct(PDO $pdo)
+    public function __construct(ExtendedPdo $pdo, QueryFactory $factory, IdGeneratorInterface $idGenerator)
     {
+        $this->idGenerator = $idGenerator;
         $this->pdo = $pdo;
+        $this->builder = $factory;
     }
 
     /**
-     * @param ModelInterface|Id|int|string $id
+     * @param $id
      * @return ModelInterface|null
      * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
      * @throws \DjinORM\Djin\Exceptions\MismatchModelException
      * @throws \DjinORM\Djin\Exceptions\NotPermanentIdException
      */
-    public function findById($id)
+    public function findById($id): ?ModelInterface
     {
-        $scalarId = DjinHelper::getScalarId($id);
+        $select = $this->select()->where('id = :id');
+        $select->bindValue(':id', DjinHelper::getScalarId($id));
+        return $this->fetchAndPopulateOne($select);
+    }
 
-        if ($model = $this->loadedById($scalarId)) {
-            return $model;
-        }
-
-        $sql = $this->buildSqlSelectQuery(null, $this->getIdName() . ' = :id', 1);
-        $data = $this->prepareAndExecute($sql, [':id' => $scalarId])->fetch();
-        $this->queryCount++;
-
-        if ($data) {
-            $this->onFetchModelData($sql, [':id' => $scalarId], [$data]);
-            return $this->populate($data);
+    /**
+     * @param ModelInterface $model
+     * @return mixed|void
+     */
+    public function save(ModelInterface $model)
+    {
+        if (isset($this->models[$model->getId()->toScalar()])) {
+            $this->update($model);
         } else {
-            return null;
+            $this->insert($model);
         }
     }
 
     /**
-     * @param string $property
-     * @param array $values
-     * @param array $andCondition
-     * @return ModelInterface[]
+     * @param ModelInterface $model
+     * @return mixed|void
      */
-    public function findByIn(string $property, array $values, array $andCondition = []): array
-    {
-        if (empty($values)) return [];
-
-        $property = $this->filterColumnName($property);
-        $bindings = str_repeat('?,', count($values) - 1) . '?';
-        $sql = $this->buildSqlSelectQuery(null, "{$property} IN ({$bindings})");
-
-        if (!empty($andCondition)) {
-            $sql.= " AND " . $this->buildSqlWhereCondition($andCondition);
-            $values = array_merge($values, $andCondition);
-        }
-
-        $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
-        $this->onFetchModelData($sql, array_values($values), $dataArray);
-
-        $this->queryCount++;
-        return $this->populateArray($dataArray);
-    }
-
-    /**
-     * @param string $property
-     * @param array $values
-     * @param array $andCondition
-     * @return ModelInterface[]
-     */
-    public function findByNotIn(string $property, array $values, array $andCondition = []): array
-    {
-        if (empty($values)) return [];
-
-        $property = $this->filterColumnName($property);
-        $bindings = str_repeat('?,', count($values) - 1) . '?';
-        $sql = $this->buildSqlSelectQuery(null, "{$property} NOT IN ({$bindings})");
-
-        if (!empty($andCondition)) {
-            $sql.= " AND " . $this->buildSqlWhereCondition($andCondition);
-            $values = array_merge($values, $andCondition);
-        }
-
-        $dataArray = $this->prepareAndExecute($sql, array_values($values))->fetchAll();
-        $this->onFetchModelData($sql, array_values($values), $dataArray);
-
-        $this->queryCount++;
-        return $this->populateArray($dataArray);
-    }
-
-    /**
-     * @param array $ids
-     * @param array $andCondition
-     * @return ModelInterface[]
-     */
-    public function findByIds(array $ids, array $andCondition = []): array
-    {
-        return $this->findByIn($this->getIdName(), $ids, $andCondition);
-    }
-
-    /**
-     * @param array $ids
-     * @param array $andCondition
-     * @return ModelInterface[]
-     */
-    public function findByNotIds(array $ids, array $andCondition = []): array
-    {
-        return $this->findByNotIn($this->getIdName(), $ids, $andCondition);
-    }
-
-    /**
-     * @param array $condition
-     * @return ModelInterface|null
-     */
-    public function findOneByCondition(array $condition): ?ModelInterface
-    {
-        $sql = $this->buildSqlSelectQuery(null, $this->buildSqlWhereCondition($condition), 1);
-        $data = $this->prepareAndExecute($sql, array_values($condition))->fetch();
-        $this->queryCount++;
-
-        if ($data) {
-            $this->onFetchModelData($sql, array_values($condition), [$data]);
-            return $this->populate($data);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * @param array $condition
-     * @return ModelInterface[]
-     */
-    public function findByCondition(array $condition): array
-    {
-        $sql = $this->buildSqlSelectQuery(null, $this->buildSqlWhereCondition($condition));
-
-        $dataArray = $this->prepareAndExecute($sql, array_values($condition))->fetchAll();
-        $this->onFetchModelData($sql, array_values($condition), $dataArray);
-
-        $this->queryCount++;
-        return $this->populateArray($dataArray);
-    }
-
-    public function countByCondition(array $condition): int
-    {
-        $sql = $this->buildSqlSelectQuery("COUNT(*)", $this->buildSqlWhereCondition($condition));
-        $this->queryCount++;
-        return (int) $this->prepareAndExecute($sql, array_values($condition))->fetchColumn();
-    }
-
-    public function findOneBySql(string $sqlWhere, array $params = []): ?ModelInterface
-    {
-        $sql = $this->buildSqlSelectQuery(null, $sqlWhere, 1);
-        $data = $this->prepareAndExecute($sql, $params)->fetch();
-        $this->queryCount++;
-
-        if ($data) {
-            $this->onFetchModelData($sql, $params, [$data]);
-            return $this->populate($data);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * @param string $sqlWhere
-     * @param array $params
-     * @return ModelInterface[]
-     */
-    public function findBySql(string $sqlWhere, array $params = []): array
-    {
-        $sql = $this->buildSqlSelectQuery(null, $sqlWhere);
-        $dataArray = $this->prepareAndExecute($sql, $params)->fetchAll();
-        $this->onFetchModelData($sql, $params, $dataArray);
-        $this->queryCount++;
-        return $this->populateArray($dataArray);
-    }
-
-    /**
-     * @param string $sqlWhere
-     * @param array $params
-     * @return int
-     */
-    public function countBySql(string $sqlWhere, array $params = []): int
-    {
-        $sql = $this->buildSqlSelectQuery("COUNT(*)", $sqlWhere);
-        $this->queryCount++;
-        return (int) $this->prepareAndExecute($sql, $params)->fetchColumn();
-    }
-
-    /**
-     * @return ModelInterface[]
-     */
-    public function findAll(): array
-    {
-        $sql = $this->buildSqlSelectQuery();
-        $dataArray = $this->prepareAndExecute($sql)->fetchAll();
-        $this->onFetchModelData($sql, [], $dataArray);
-        $this->queryCount++;
-        return $this->populateArray($dataArray);
-    }
-
-    public function countAll(): int
-    {
-        $sql = $sql = $this->buildSqlSelectQuery("COUNT(*)");
-        return (int) $this->prepareAndExecute($sql)->fetchColumn();
-    }
-
-    public function exists(array $condition): bool
-    {
-        $sql = $this->buildSqlSelectQuery("1", $this->buildSqlWhereCondition($condition), 1);
-        $this->queryCount++;
-        return $this->prepareAndExecute($sql, array_values($condition))->fetch() ? true : false;
-    }
-
     public function insert(ModelInterface $model)
     {
         $data = $this->extract($model);
-
-        $table = static::getTableName();
-        $sql = "INSERT INTO {$table} " . $this->buildSqlInsertCondition($data);
-        $this->prepareAndExecute($sql, array_values($data));
-
-        $this->rawData[$model->getId()->toScalar()] = $data;
-
-        $this->queryCount++;
+        $insert = $this->builder->newInsert()->into($this->getTableName());
+        $insert->cols($data);
+        $this->insertStatement($insert);
     }
 
+    /**
+     * @param ModelInterface $model
+     * @return mixed|void
+     */
     public function update(ModelInterface $model)
     {
-        $data = $this->getDiffDataForUpdate($model);
-        if (!empty($data)) {
-            $table = static::getTableName();
-
-            $incrementFields = array_map(function ($property) {
-                return $this->filterColumnName($property);
-            }, $this->getIncrementNumericFields());
-
-            $sqlUpdate = $this->buildSqlUpdateCondition($data, $incrementFields);
-            $sqlWhere = $this->whereFilter($this->getIdName() . ' = ?');
-            $sql = "UPDATE {$table} SET {$sqlUpdate} WHERE {$sqlWhere}";
-            $bindings = array_values($data);
-            $bindings[] = $model->getId()->toScalar();
-            $this->prepareAndExecute($sql, $bindings);
-            $this->queryCount++;
-            $this->rawData[$model->getId()->toScalar()] = $data;
-        }
+        $data = $this->extract($model);
+        $update = $this->builder->newUpdate()->table($this->getTableName());
+        $update->cols($data);
+        $update->where("{$this->getIdName()} = :id")->bindValue('id', $model->getId()->toScalar());
+        $this->updateStatement($update);
     }
 
+    /**
+     * @param ModelInterface $model
+     * @return mixed|void
+     */
     public function delete(ModelInterface $model)
     {
-        $table = static::getTableName();
-        $sqlWhere = $this->whereFilter($this->getIdName() . ' = :id');
-        $sql = "DELETE FROM {$table} WHERE {$sqlWhere}";
-        $this->prepareAndExecute($sql, [':id' => $model->getId()->toScalar()]);
-
+        $delete = $this->builder->newDelete()->from($this->getTableName());
+        $delete->where("{$this->getIdName()} = :id")->bindValue('id', $model->getId()->toScalar());
+        $this->deleteStatement($delete);
         unset($this->models[$model->getId()->toScalar()]);
-        unset($this->rawData[$model->getId()->toScalar()]);
-        unset($model);
     }
 
-    abstract protected function getTableName(): string;
 
-    protected function getIncrementNumericFields(): array
+    ## Djin repo interface ##
+
+
+    /**
+     * @param ModelInterface $model
+     * @return Id
+     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
+     * @throws \DjinORM\Djin\Exceptions\LogicException
+     */
+    public function setPermanentId(ModelInterface $model): Id
     {
-        return [];
+        if (!$model->getId()->isPermanent()) {
+            $model->getId()->setPermanentId($this->idGenerator->getNextId($model));
+        }
+        return $model->getId();
     }
 
-    protected function filterColumnName($property): string
+    /**
+     * Освобождает из памяти загруженные модели.
+     * ВНИМАНИЕ: после освобождения памяти в случае сохранения существующей модели через self::save()
+     * в БД будет вставлена новая запись вместо обновления существующей
+     * @return mixed|void
+     */
+    public function freeUpMemory()
     {
-        return preg_replace('~[^\w]~i', '', $property);
+        $this->models = [];
     }
 
-    protected function getDiffDataForUpdate(ModelInterface $model): array
-    {
-        $extracted = $this->extract($model);
-        $data = array_diff_assoc($extracted, $this->rawData[$model->getId()->toScalar()]);
 
-        foreach ($this->getIncrementNumericFields() as $field) {
-            $data[$field] = $extracted[$field];
+    ## PDOStatement ##
+
+
+    protected function selectStatement(SelectInterface $select): PDOStatement
+    {
+        return $this->getStatement($select);
+    }
+
+    protected function insertStatement(InsertInterface $insert): PDOStatement
+    {
+        return $this->getStatement($insert);
+    }
+
+    protected function updateStatement(UpdateInterface $update): PDOStatement
+    {
+        return $this->getStatement($update);
+    }
+
+    protected function deleteStatement(DeleteInterface $delete): PDOStatement
+    {
+        return $this->getStatement($delete);
+    }
+
+    protected function getStatement(QueryInterface $query)
+    {
+        try {
+            $stm = $this->pdo->prepare($query->getStatement());
+            $stm->execute($query->getBindValues());
+        } catch (\PDOException $exception) {
+            throw new PDOExceptionWithSql($query->getStatement(), $query->getBindValues(), $exception);
+        }
+        return $stm;
+    }
+
+
+    ## Fetch ##
+
+
+    /**
+     * @param SelectInterface $select
+     * @return array|bool
+     */
+    protected function fetchOne(SelectInterface $select)
+    {
+        return $this->selectStatement($select)->fetch();
+    }
+
+    /**
+     * @param SelectInterface $select
+     * @return array
+     */
+    protected function fetchMany(SelectInterface $select): array
+    {
+        return $this->selectStatement($select)->fetchAll();
+    }
+
+
+    ## Populate ##
+
+
+    protected function populateOne($data): ?ModelInterface
+    {
+        if (!$data) {
+            return null;
         }
 
-        return $data;
+        $model = $this->hydrate($data);
+        $this->models[$model->getId()->toScalar()] = $model;
+        return $model;
+    }
+
+    protected function populateMany($dataArray): array
+    {
+        $models = [];
+        foreach ($dataArray as $data) {
+            $models[] = $this->populateOne($data);
+        }
+        return $models;
+    }
+
+
+    ## Helpers ##
+
+
+    protected function fetchAndPopulateOne(SelectInterface $select): ?ModelInterface
+    {
+        $data = $this->fetchOne($select);
+        return $this->populateOne($data);
+    }
+
+    protected function fetchAndPopulateMany(SelectInterface $select): array
+    {
+        $dataArray = $this->fetchMany($select);
+        return $this->populateMany($dataArray);
+    }
+
+    protected function select(): SelectInterface
+    {
+        return $this->builder->newSelect()->cols(['*'])->from($this->getTableName());
     }
 
     protected function getIdName(): string
     {
         /** @var ModelInterface $class */
         $class = $this->getModelClass();
-        return $this->filterColumnName($class::getModelIdPropertyName());
+        return $class::getModelIdPropertyName();
     }
 
-    protected function getSelectSql(): string
-    {
-        return '*';
-    }
-    
-    protected function whereFilter(string $sql): string
-    {
-        return $sql;
-    }
 
-    protected function buildSqlWhereCondition(array $array, $operator = 'AND'): string
-    {
-        $condition = '';
-        foreach (array_keys($array) as $property) {
-            $property = $this->filterColumnName($property);
-            $condition.= "{$property} = ? {$operator} ";
-        }
-        return mb_substr($condition, 0, (strlen($operator)+1) * -1);
-    }
+    ## Hydrate & Extract ##
 
-    protected function buildSqlInsertCondition(array $array): string
-    {
-        $sqlColumns = '';
-        foreach (array_keys($array) as $property) {
-            $property = $this->filterColumnName($property);
-            $sqlColumns.= "{$property}, ";
-        }
-        $sqlColumns = mb_substr($sqlColumns, 0, -2);
 
-        $sqlValues = str_repeat('?,', count($array) - 1) . '?';
+    abstract protected function hydrate(array $data): ModelInterface;
 
-        return "({$sqlColumns}) VALUES ({$sqlValues})";
-    }
+    abstract protected function extract(ModelInterface $model);
 
-    protected function buildSqlUpdateCondition(array $array, array $increment = []): string
-    {
-        $condition = '';
-        foreach (array_keys($array) as $property) {
-            $property = $this->filterColumnName($property);
 
-            if (in_array($property, $increment, false)) {
-                $condition.= "{$property} = {$property} + ?, ";
-            } else {
-                $condition.= "{$property} = ?, ";
-            }
-        }
-        return mb_substr($condition, 0, -2);
-    }
+    ## Название таблицы и класса модели ##
 
-    protected function buildSqlSelectQuery(string $select = null, string $where = '', int $limit = null)
-    {
-        $table = $this->getTableName();
 
-        if ($select === null) {
-            $select = $this->getSelectSql();
-        }
+    abstract protected function getTableName(): string;
 
-        $sql = "SELECT {$select} FROM {$table}";
+    abstract public static function getModelClass(): string;
 
-        $where = trim($this->whereFilter($where));
-        if (!empty($where)) {
-            $sql.= " WHERE {$where}";
-        }
-
-        if ($limit > 0) {
-            $sql.= " LIMIT {$limit}";
-        }
-
-        return $sql;
-    }
-
-    /**
-     * @param string $sql
-     * @param array $params
-     * @return PDOStatement
-     * @throws \PDOException
-     * @throws PDOExceptionWithSql
-     */
-    protected function prepareAndExecute(string $sql, $params = []): PDOStatement
-    {
-        try {
-            $stm = $this->pdo->prepare($sql);
-            $stm->execute($params);
-        } catch (\PDOException $exception) {
-            throw new PDOExceptionWithSql($sql, $params, $exception);
-        }
-        return $stm;
-    }
-
-    protected function onFetchModelData(string $sql, array $params, $dataArray)
-    {
-
-    }
 
 }

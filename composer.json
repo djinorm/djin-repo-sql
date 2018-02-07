@@ -15,7 +15,9 @@
     "require": {
         "php": ">=7.1.0",
         "phpunit/dbunit": "^3.0",
-        "djinorm/djin": "<4"
+        "djinorm/djin": "^4.0",
+        "aura/sql": "^2.5",
+        "aura/sqlquery": "^2.7"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.0"
