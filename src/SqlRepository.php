@@ -70,6 +70,8 @@ abstract class SqlRepository implements RepositoryInterface
     /**
      * @param ModelInterface $model
      * @return mixed|void
+     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
+     * @throws \DjinORM\Djin\Exceptions\LogicException
      */
     public function save(ModelInterface $model)
     {
@@ -83,9 +85,12 @@ abstract class SqlRepository implements RepositoryInterface
     /**
      * @param ModelInterface $model
      * @return mixed|void
+     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
+     * @throws \DjinORM\Djin\Exceptions\LogicException
      */
     public function insert(ModelInterface $model)
     {
+        $this->setPermanentId($model);
         $data = $this->extract($model);
         $insert = $this->builder->newInsert()->into($this->getTableName());
         $insert->cols($data);
