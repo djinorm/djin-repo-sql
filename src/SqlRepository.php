@@ -218,8 +218,15 @@ abstract class SqlRepository implements RepositoryInterface
         }
 
         $model = $this->hydrate($data);
-        $this->models[$model->getId()->toScalar()] = $model;
-        return $model;
+        $id = $model->getId()->toScalar();
+
+        if (!isset($this->models[$id])) {
+            $this->models[$id] = $model;
+        } else {
+            unset($model);
+        }
+
+        return $this->models[$id];
     }
 
     protected function populateMany($dataArray): array
