@@ -31,6 +31,7 @@ class DatetimeMapper extends ScalarMapper
      * @param object $object
      * @return DateTimeInterface|null
      * @throws \DjinORM\Djin\Exceptions\HydratorException
+     * @throws \ReflectionException
      */
     public function hydrate(array $data, $object): ?DateTimeInterface
     {
@@ -50,6 +51,12 @@ class DatetimeMapper extends ScalarMapper
         return $datetime;
     }
 
+    /**
+     * @param $object
+     * @return array
+     * @throws \DjinORM\Djin\Exceptions\ExtractorException
+     * @throws \ReflectionException
+     */
     public function extract($object): array
     {
         /** @var DateTimeInterface $datetime */

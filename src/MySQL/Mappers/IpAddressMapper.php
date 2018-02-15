@@ -31,7 +31,8 @@ class IpAddressMapper extends ScalarMapper
      * @param array $data
      * @param object $object
      * @return null|string
-     * @throws \DjinORM\Djin\Exceptions\HydratorException
+     * @throws HydratorException
+     * @throws \ReflectionException
      */
     public function hydrate(array $data, $object): ?string
     {
@@ -58,6 +59,12 @@ class IpAddressMapper extends ScalarMapper
         return $ip;
     }
 
+    /**
+     * @param $object
+     * @return array
+     * @throws ExtractorException
+     * @throws \ReflectionException
+     */
     public function extract($object): array
     {
         $ip = RepoHelper::getProperty($object, $this->getModelProperty());

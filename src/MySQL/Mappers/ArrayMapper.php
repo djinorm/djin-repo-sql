@@ -20,7 +20,8 @@ class ArrayMapper extends ScalarMapper
      * @param array $data
      * @param object $object
      * @return array|null
-     * @throws \DjinORM\Djin\Exceptions\HydratorException
+     * @throws HydratorException
+     * @throws \ReflectionException
      */
     public function hydrate(array $data, $object): ?array
     {
@@ -44,6 +45,12 @@ class ArrayMapper extends ScalarMapper
         return $array;
     }
 
+    /**
+     * @param $object
+     * @return array
+     * @throws ExtractorException
+     * @throws \ReflectionException
+     */
     public function extract($object): array
     {
         $array = RepoHelper::getProperty($object, $this->getModelProperty());
