@@ -154,7 +154,7 @@ abstract class SubmodelRepository extends MapperSqlRepository
             $select = $this->select()->where($this->getParentIdColumnName() . " IN (:ids)")->bindValue('ids', $ids);
             $result = array_merge($result, $this->fetchAndPopulateMany($select));
         }
-        return $result;
+        return array_values($result);
     }
 
     /**
@@ -167,7 +167,10 @@ abstract class SubmodelRepository extends MapperSqlRepository
     public function loadForParent($parentOrId): array
     {
         $parentId = DjinHelper::getScalarId($parentOrId);
-        return $this->parentPreload[$parentId] ?? [];
+        if (isset($this->parentPreload[$parentId])) {
+            return array_values($this->parentPreload[$parentId]);
+        }
+        return [];
     }
 
     /**
