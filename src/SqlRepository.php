@@ -254,9 +254,9 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->populateMany($dataArray);
     }
 
-    protected function select(): SelectInterface
+    protected function select(array $cols = ['*']): SelectInterface
     {
-        return $this->builder->newSelect()->cols(['*'])->from($this->getTableName());
+        return $this->builder->newSelect()->cols($cols)->from($this->getTableName());
     }
 
     protected function getIdName(): string
