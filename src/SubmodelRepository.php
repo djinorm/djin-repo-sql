@@ -168,8 +168,7 @@ abstract class SubmodelRepository extends MapperSqlRepository
     {
         $parentId = DjinHelper::getScalarId($parentOrId);
         if (isset($this->parentPreload[$parentId])) {
-            $items = array_values($this->parentPreload[$parentId]);
-            return DjinHelper::indexModelsArrayById($items);
+            return array_values($this->parentPreload[$parentId]);
         }
         return [];
     }
