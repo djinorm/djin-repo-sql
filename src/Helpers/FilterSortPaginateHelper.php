@@ -24,7 +24,7 @@ use DjinORM\Components\FilterSortPaginate\Filters\NotInFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\NotWildcardFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\OrFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\WildcardFilter;
-use DjinORM\Repositories\Sql\FilterSortPaginate;
+use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
 
 class FilterSortPaginateHelper
 {
