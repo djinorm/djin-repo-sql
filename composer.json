@@ -12,11 +12,18 @@
             "role": "Main developer"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "file://../djin-filter-sort-paginate"
+        }
+    ],
     "require": {
         "php": ">=7.1.0",
         "djinorm/djin": "^4.2",
         "aura/sql": "^2.5",
-        "aura/sqlquery": "^2.7"
+        "aura/sqlquery": "^2.7",
+        "djinorm/djin-filter-sort-paginate": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.1",

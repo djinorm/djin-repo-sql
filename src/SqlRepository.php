@@ -71,6 +71,21 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->fetchAndPopulateOne($select);
     }
 
+    public function GetFilterSortPaginateSelect(FilterSortPaginate $fsp): SelectInterface
+    {
+        $select = $this->select()
+            ->setPaging($fsp->getPageSize())
+            ->page($fsp->getPageNumber());
+
+        foreach ($fsp->getSort()->get() as $sortBy => $sortDirection) {
+            $select->orderBy(["{$sortBy} " . $sortDirection == 1 ? 'ASC' : 'DESC']);
+        }
+
+        //$select->
+
+        return $select;
+    }
+
     /**
      * @param ModelInterface $model
      * @return mixed|void
