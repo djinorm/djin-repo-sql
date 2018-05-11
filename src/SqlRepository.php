@@ -62,8 +62,12 @@ abstract class SqlRepository implements RepositoryInterface
      */
     public function findById($id): ?ModelInterface
     {
+        $scalarId = DjinHelper::getScalarId($id);
+        if (isset($this->models[$scalarId])) {
+            return $this->models[$scalarId];
+        }
         $select = $this->select()->where("{$this->getIdName()} = :id");
-        $select->bindValue('id', DjinHelper::getScalarId($id));
+        $select->bindValue('id', $scalarId);
         return $this->fetchAndPopulateOne($select);
     }
 
@@ -175,7 +179,7 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->getStatement($delete);
     }
 
-    protected function getStatement(QueryInterface $query)
+    protected function getStatement(QueryInterface $query): PDOStatement
     {
         try {
             $stm = $this->pdo->perform($query->getStatement(), $query->getBindValues());
@@ -272,7 +276,7 @@ abstract class SqlRepository implements RepositoryInterface
 
     abstract protected function hydrate(array $data): ModelInterface;
 
-    abstract protected function extract(ModelInterface $model);
+    abstract protected function extract(ModelInterface $model): array;
 
 
     ## Название таблицы и класса модели ##
