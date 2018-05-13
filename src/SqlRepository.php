@@ -15,12 +15,14 @@ use Aura\SqlQuery\Common\SelectInterface;
 use Aura\SqlQuery\Common\UpdateInterface;
 use Aura\SqlQuery\QueryFactory;
 use Aura\SqlQuery\QueryInterface;
+use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
 use DjinORM\Djin\Helpers\DjinHelper;
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
+use DjinORM\Repositories\Sql\Helpers\FilterSortPaginateHelper;
 use PDOStatement;
 
 abstract class SqlRepository implements RepositoryInterface
@@ -71,19 +73,15 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->fetchAndPopulateOne($select);
     }
 
-    public function GetFilterSortPaginateSelect(FilterSortPaginate $fsp): SelectInterface
+    /**
+     * @param FilterSortPaginate $fsp
+     * @return array
+     * @throws \DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException
+     */
+    public function findWithFilterSortPaginate(FilterSortPaginate $fsp): array
     {
-        $select = $this->select()
-            ->setPaging($fsp->getPageSize())
-            ->page($fsp->getPageNumber());
-
-        foreach ($fsp->getSort()->get() as $sortBy => $sortDirection) {
-            $select->orderBy(["{$sortBy} " . $sortDirection == 1 ? 'ASC' : 'DESC']);
-        }
-
-        //$select->
-
-        return $select;
+        $select = FilterSortPaginateHelper::buildQuery($fsp, $this->select());
+        return $this->fetchAndPopulateMany($select);
     }
 
     /**

@@ -45,12 +45,13 @@ class FilterSortPaginateHelper
             ->page($fsp->getPageNumber());
 
         foreach ($fsp->getSort()->get() as $sortBy => $sortDirection) {
-            $select->orderBy(["{$sortBy} " . $sortDirection == 1 ? 'ASC' : 'DESC']);
+            $select->orderBy(["{$sortBy} " . ($sortDirection == 1 ? 'ASC' : 'DESC')]);
         }
 
         if ($fsp->getFilter()) {
             $expression = static::filter($fsp->getFilter());
-            $select->where($expression[0]);
+            $condition = preg_replace('~\s+~', ' ', trim($expression[0]));
+            $select->where($condition);
             $select->bindValues($expression[1]);
         }
 
@@ -62,7 +63,7 @@ class FilterSortPaginateHelper
      * @return array
      * @throws UnsupportedFilterException
      */
-    public static function filter(FilterInterface $filter): array
+    protected static function filter(FilterInterface $filter): array
     {
         $postfix = '_' . self::$iteration++;
         $class = get_class($filter);
@@ -77,7 +78,7 @@ class FilterSortPaginateHelper
                     $conditions[] = $expression[0];
                     $params = array_merge($params, $expression[1]);
                 }
-                $condition = " (" . implode(" AND ", $conditions) . " )";
+                $condition = " (" . implode(" AND ", $conditions) . ") ";
                 break;
             case OrFilter::class:
                 /** @var OrFilter $filter */
@@ -87,7 +88,7 @@ class FilterSortPaginateHelper
                     $conditions[] = $expression[0];
                     $params = array_merge($params, $expression[1]);
                 }
-                $condition = " (" . implode(" OR ", $conditions) . " )";
+                $condition = " (" . implode(" OR ", $conditions) . ") ";
                 break;
 
 
@@ -133,14 +134,14 @@ class FilterSortPaginateHelper
                 break;
             case NotEmptyFilter::class:
                 /** @var NotEmptyFilter $filter */
-                $condition = "({$filter->getField()} IS NOT NULL OR {$filter->getField()} != :empty{$postfix})";
+                $condition = "({$filter->getField()} IS NOT NULL AND {$filter->getField()} != :empty{$postfix})";
                 $params['empty' . $postfix] = '';
                 break;
             case NotEqualsFilter::class:
                 /** @var NotEqualsFilter $filter */
                 $condition = "{$filter->getField()} != :notEquals{$postfix}";
                 $params['notEquals' . $postfix] = $filter->getValue();
-                break;break;
+                break;
             case NotInFilter::class:
                 /** @var NotInFilter $filter */
                 $condition = "{$filter->getField()} NOT IN(:notIn{$postfix})";
@@ -158,7 +159,7 @@ class FilterSortPaginateHelper
                 throw new UnsupportedFilterException("Filter «{$class}» was nat supported by this implementing");
         }
 
-        return [" ({$condition}) ", $params];
+        return [" {$condition} ", $params];
     }
 
 }
