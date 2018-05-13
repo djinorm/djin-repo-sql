@@ -44,8 +44,10 @@ class FilterSortPaginateHelper
             ->setPaging($fsp->getPageSize())
             ->page($fsp->getPageNumber());
 
-        foreach ($fsp->getSort()->get() as $sortBy => $sortDirection) {
-            $select->orderBy(["{$sortBy} " . ($sortDirection == 1 ? 'ASC' : 'DESC')]);
+        if ($fsp->getSort()) {
+            foreach ($fsp->getSort()->get() as $sortBy => $sortDirection) {
+                $select->orderBy(["{$sortBy} " . ($sortDirection == 1 ? 'ASC' : 'DESC')]);
+            }
         }
 
         if ($fsp->getFilter()) {

@@ -10,6 +10,7 @@ namespace DjinORM\Repositories\Sql\Helpers;
 use Aura\SqlQuery\QueryFactory;
 use DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException;
 use DjinORM\Components\FilterSortPaginate\Filters\CompareFilter;
+use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
 use DjinORM\Components\FilterSortPaginate\FilterSortPaginateFactory;
 use DjinORM\Components\FilterSortPaginate\Sort;
 use PHPUnit\Framework\TestCase;
@@ -130,5 +131,18 @@ class FilterSortPaginateHelperTest extends TestCase
         $this->expectException(UnsupportedFilterException::class);
         $this->query['filters']['$or']['field_2'] = ['$unsupported' => 10];
         (new FilterSortPaginateFactory($this->query))->create();
+    }
+
+    public function testBuildWithoutSortAndFilters()
+    {
+        $fsp = new FilterSortPaginate();
+        $actual = FilterSortPaginateHelper::buildQuery($fsp, $this->queryFactory->newSelect()->cols(['*']));
+
+        $expected = $this->queryFactory->newSelect()->cols(['*']);
+        $expected->page(1);
+        $expected->setPaging(20);
+
+        $this->assertEquals($expected->getStatement(), $actual->getStatement());
+        $this->assertEquals($expected->getBindValues(), $actual->getBindValues());
     }
 }
