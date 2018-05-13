@@ -75,7 +75,7 @@ abstract class SqlRepository implements RepositoryInterface
 
     /**
      * @param FilterSortPaginate $fsp
-     * @return array
+     * @return ModelInterface[]
      * @throws \DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException
      */
     public function findWithFilterSortPaginate(FilterSortPaginate $fsp): array

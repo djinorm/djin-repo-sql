@@ -7,6 +7,11 @@
 
 namespace DjinORM\Repositories\Sql;
 
+use DjinORM\Components\FilterSortPaginate\Filters\AndFilter;
+use DjinORM\Components\FilterSortPaginate\Filters\CompareFilter;
+use DjinORM\Components\FilterSortPaginate\Filters\WildcardFilter;
+use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
+use DjinORM\Components\FilterSortPaginate\Sort;
 use DjinORM\Djin\Id\MemoryIdGenerator;
 use DjinORM\Repositories\Sql\Components\DbTestCase;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
@@ -61,13 +66,29 @@ class SimpleSqlRepoTest extends DbTestCase
         /** @var Model[]|array $models */
         $models = $this->repo->findAll();
 
-        $this->assertCount(2, $models);
+        $this->assertCount(10, $models);
 
         $this->assertInstanceOf(Model::class, $models[0]);
         $this->assertEquals(1, $models[0]->getId()->toScalar());
 
         $this->assertInstanceOf(Model::class, $models[1]);
         $this->assertEquals(2, $models[1]->getId()->toScalar());
+    }
+
+    public function testFindWithFilterSortPaginate()
+    {
+        $sort = new Sort();
+        $sort->add('id', Sort::SORT_DESC);
+        $sort->add('name', Sort::SORT_ASC);
+
+        $fsp = new FilterSortPaginate(1, 5, $sort, new AndFilter([
+            new WildcardFilter('name', '*th'),
+            new CompareFilter('id', CompareFilter::GREAT_THAN, 1)
+        ]));
+
+        /** @var Model[] $models */
+        $models = $this->repo->findWithFilterSortPaginate($fsp);
+        $this->assertCount(5, $models);
     }
 
     public function testInsert()
@@ -134,6 +155,38 @@ class SimpleSqlRepoTest extends DbTestCase
                 [
                     'id' => 2,
                     'name' => 'second',
+                ],
+                [
+                    'id' => 3,
+                    'name' => 'third',
+                ],
+                [
+                    'id' => 4,
+                    'name' => 'forth',
+                ],
+                [
+                    'id' => 5,
+                    'name' => 'fifth',
+                ],
+                [
+                    'id' => 6,
+                    'name' => 'sixth',
+                ],
+                [
+                    'id' => 7,
+                    'name' => 'seventh',
+                ],
+                [
+                    'id' => 8,
+                    'name' => 'eighth',
+                ],
+                [
+                    'id' => 9,
+                    'name' => 'ninth',
+                ],
+                [
+                    'id' => 10,
+                    'name' => 'tenth',
                 ],
             ],
         ]);
