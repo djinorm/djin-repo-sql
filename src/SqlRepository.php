@@ -95,7 +95,6 @@ abstract class SqlRepository implements RepositoryInterface
         $fspCount->setSort(null);
         $select = FilterSortPaginateHelper::buildQuery($fspCount, $this->select(['COUNT(*)']));
         $select->limit(0);
-        echo $select->getStatement();
         return (int) $this->selectStatement($select)->fetchColumn();
     }
 
