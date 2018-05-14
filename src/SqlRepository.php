@@ -85,6 +85,21 @@ abstract class SqlRepository implements RepositoryInterface
     }
 
     /**
+     * @param FilterSortPaginate $fsp
+     * @return int
+     * @throws \DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException
+     */
+    public function countByFilterSortPaginate(FilterSortPaginate $fsp): int
+    {
+        $fspCount = clone $fsp;
+        $fspCount->setSort(null);
+        $select = FilterSortPaginateHelper::buildQuery($fspCount, $this->select(['COUNT(*)']));
+        $select->limit(0);
+        echo $select->getStatement();
+        return (int) $this->selectStatement($select)->fetchColumn();
+    }
+
+    /**
      * @param ModelInterface $model
      * @return mixed|void
      * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
