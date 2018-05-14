@@ -11,6 +11,7 @@ use DjinORM\Components\FilterSortPaginate\Filters\AndFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\CompareFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\WildcardFilter;
 use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
+use DjinORM\Components\FilterSortPaginate\Paginate;
 use DjinORM\Components\FilterSortPaginate\Sort;
 use DjinORM\Djin\Id\MemoryIdGenerator;
 use DjinORM\Repositories\Sql\Components\DbTestCase;
@@ -41,7 +42,7 @@ class SimpleSqlRepoTest extends DbTestCase
         $sort->add('id', Sort::SORT_DESC);
         $sort->add('name', Sort::SORT_ASC);
 
-        $this->fsp = new FilterSortPaginate(1, 5, $sort, new AndFilter([
+        $this->fsp = new FilterSortPaginate(new Paginate(1, 5), $sort, new AndFilter([
             new WildcardFilter('name', '*th'),
             new CompareFilter('id', CompareFilter::GREAT_THAN, 1)
         ]));
@@ -89,7 +90,7 @@ class SimpleSqlRepoTest extends DbTestCase
 
     public function testFindWithFilterSortPaginate()
     {
-        /** @var Model[] $models */
+        /** @var Model[]|array $models */
         $models = $this->repo->findWithFilterSortPaginate($this->fsp);
         $this->assertCount(5, $models);
     }

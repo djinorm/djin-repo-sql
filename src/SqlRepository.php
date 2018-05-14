@@ -22,7 +22,7 @@ use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
-use DjinORM\Repositories\Sql\Helpers\FilterSortPaginateHelper;
+use DjinORM\Repositories\Sql\Components\FilterSortPaginateQueryBuilder;
 use PDOStatement;
 
 abstract class SqlRepository implements RepositoryInterface
@@ -80,8 +80,8 @@ abstract class SqlRepository implements RepositoryInterface
      */
     public function findWithFilterSortPaginate(FilterSortPaginate $fsp): array
     {
-        $select = FilterSortPaginateHelper::buildQuery($fsp, $this->select());
-        return $this->fetchAndPopulateMany($select);
+        $fspBuilder = new FilterSortPaginateQueryBuilder($fsp);
+        return $this->fetchAndPopulateMany($fspBuilder->buildQuery($this->select()));
     }
 
     /**
@@ -93,8 +93,11 @@ abstract class SqlRepository implements RepositoryInterface
     {
         $fspCount = clone $fsp;
         $fspCount->setSort(null);
-        $select = FilterSortPaginateHelper::buildQuery($fspCount, $this->select(['COUNT(*)']));
-        $select->limit(0);
+        $fspCount->setPaginate(null);
+
+        $fspBuilder = new FilterSortPaginateQueryBuilder($fspCount);
+        $select = $fspBuilder->buildQuery($this->select(['COUNT(*)']));
+
         return (int) $this->selectStatement($select)->fetchColumn();
     }
 

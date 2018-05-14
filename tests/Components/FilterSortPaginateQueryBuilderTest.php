@@ -4,18 +4,20 @@
  * Datetime: 13.05.2018 13:15
  */
 
-namespace DjinORM\Repositories\Sql\Helpers;
+namespace DjinORM\Repositories\Sql\Components;
 
 
 use Aura\SqlQuery\QueryFactory;
 use DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException;
+use DjinORM\Components\FilterSortPaginate\Filters\BetweenFilter;
 use DjinORM\Components\FilterSortPaginate\Filters\CompareFilter;
+use DjinORM\Components\FilterSortPaginate\Filters\FilterInterface;
 use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
 use DjinORM\Components\FilterSortPaginate\FilterSortPaginateFactory;
 use DjinORM\Components\FilterSortPaginate\Sort;
 use PHPUnit\Framework\TestCase;
 
-class FilterSortPaginateHelperTest extends TestCase
+class FilterSortPaginateQueryBuilderTest extends TestCase
 {
 
     /** @var array */
@@ -24,12 +26,23 @@ class FilterSortPaginateHelperTest extends TestCase
     /** @var QueryFactory */
     private $queryFactory;
 
+    /** @var FilterSortPaginateFactory */
+    private $fspFactory;
+
+    /** @var FilterSortPaginate */
+    private $fsp;
+
+    /** @var \DjinORM\Repositories\Sql\Components\FilterSortPaginateQueryBuilder */
+    private $fspQueryBuilder;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->query = [
-            'page' => 10,
-            'pageSize' => 50,
+            'paginate' => [
+                'number' => 10,
+                'size' => 50,
+            ],
             'sort' => [
                 'field_1' => Sort::SORT_DESC,
                 'field_2' => Sort::SORT_ASC,
@@ -61,12 +74,34 @@ class FilterSortPaginateHelperTest extends TestCase
             ],
         ];
         $this->queryFactory = new QueryFactory(QueryFactory::COMMON);
+        $this->fspFactory = new FilterSortPaginateFactory();
+        $this->fsp = $this->fspFactory->create($this->query);
+        $this->fspQueryBuilder = new FilterSortPaginateQueryBuilder($this->fsp);
+    }
+
+    public function testGetFilters()
+    {
+        $this->assertCount(11, $this->fspQueryBuilder->getFilters());
+    }
+
+    public function testAddFilter()
+    {
+        $this->fspQueryBuilder->addFilter(FilterInterface::class, function (){});
+        $this->assertCount(12, $this->fspQueryBuilder->getFilters());
+    }
+
+    public function testRemoveFilter()
+    {
+        $this->fspQueryBuilder->removeFilter(BetweenFilter::class);
+        $this->assertCount(10, $this->fspQueryBuilder->getFilters());
     }
 
     public function testBuildQuery()
     {
-        $fsp = (new FilterSortPaginateFactory($this->query))->create();
-        $actual = FilterSortPaginateHelper::buildQuery($fsp, $this->queryFactory->newSelect()->cols(['*']));
+        $fsp = $this->fspFactory->create($this->query);
+        $fspQueryBuilder = new FilterSortPaginateQueryBuilder($fsp);
+
+        $actual = $fspQueryBuilder->buildQuery($this->queryFactory->newSelect()->cols(['*']));
 
         $expected = $this->queryFactory->newSelect()->cols(['*']);
         $expected->page(10);
@@ -130,17 +165,16 @@ class FilterSortPaginateHelperTest extends TestCase
     {
         $this->expectException(UnsupportedFilterException::class);
         $this->query['filters']['$or']['field_2'] = ['$unsupported' => 10];
-        (new FilterSortPaginateFactory($this->query))->create();
+        $this->fspFactory->create($this->query);
     }
 
     public function testBuildWithoutSortAndFilters()
     {
         $fsp = new FilterSortPaginate();
-        $actual = FilterSortPaginateHelper::buildQuery($fsp, $this->queryFactory->newSelect()->cols(['*']));
+        $fspQueryBuilder = new FilterSortPaginateQueryBuilder($fsp);
+        $actual = $fspQueryBuilder->buildQuery($this->queryFactory->newSelect()->cols(['*']));
 
         $expected = $this->queryFactory->newSelect()->cols(['*']);
-        $expected->page(1);
-        $expected->setPaging(20);
 
         $this->assertEquals($expected->getStatement(), $actual->getStatement());
         $this->assertEquals($expected->getBindValues(), $actual->getBindValues());
