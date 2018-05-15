@@ -18,7 +18,7 @@ class SubclassMapperTest extends MapperTestCase
 
     protected $testSubClass;
 
-    public function setUp()
+    protected function setUp(): void
     {
         parent::setUp();
         $this->testSubClass = new class() {
