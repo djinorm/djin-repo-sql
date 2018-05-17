@@ -164,7 +164,7 @@ class FilterSortPaginateQueryBuilder
         }
 
         if ($fsp->getFilter()) {
-            $expression = static::filter($fsp->getFilter());
+            $expression = $this->filter($fsp->getFilter());
             $condition = preg_replace('~\s+~', ' ', trim($expression[0]));
             $select->where($condition);
             $select->bindValues($expression[1]);
@@ -189,7 +189,7 @@ class FilterSortPaginateQueryBuilder
                 /** @var AndFilter $filter */
                 $conditions = [];
                 foreach ($filter->getFilters() as $filter) {
-                    $expression = static::filter($filter);
+                    $expression = $this->filter($filter);
                     $conditions[] = $expression[0];
                     $params = array_merge($params, $expression[1]);
                 }
@@ -199,7 +199,7 @@ class FilterSortPaginateQueryBuilder
                 /** @var OrFilter $filter */
                 $conditions = [];
                 foreach ($filter->getFilters() as $filter) {
-                    $expression = static::filter($filter);
+                    $expression = $this->filter($filter);
                     $conditions[] = $expression[0];
                     $params = array_merge($params, $expression[1]);
                 }
