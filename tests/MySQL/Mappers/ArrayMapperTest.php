@@ -10,7 +10,11 @@ namespace DjinORM\Repositories\Sql\MySQL\Mappers;
 
 use DjinORM\Djin\Exceptions\ExtractorException;
 use DjinORM\Djin\Exceptions\HydratorException;
+use DjinORM\Djin\Mappers\IdMapper;
+use DjinORM\Djin\Mappers\Mapper;
+use DjinORM\Djin\Mappers\StringMapper;
 use DjinORM\Djin\TestHelpers\MapperTestCase;
+use DjinORM\Repositories\Sql\Fakes\Model;
 
 class ArrayMapperTest extends MapperTestCase
 {
@@ -35,6 +39,18 @@ class ArrayMapperTest extends MapperTestCase
         $this->assertHydrated([], 'qwerty', $this->getMapperDisallowNull());
     }
 
+    public function testHydrateNested()
+    {
+        $expected = [
+            '__1__' => new Model(1, 'first'),
+            '__2__' => new Model(2, 'second'),
+        ];
+
+        $input = '{"__1__": {"id": 1, "name": "first"}, "__2__": {"id": 2, "name": "second"}}';
+
+        $this->assertHydrated($expected, $input, $this->getNestedMapper());
+    }
+
     public function testExtract()
     {
         $this->assertExtracted(null, null, $this->getMapperAllowNull());
@@ -57,6 +73,26 @@ class ArrayMapperTest extends MapperTestCase
         $array = ['key' => &$array];
 
         $this->assertExtracted([], $array, $this->getMapperDisallowNull());
+    }
+
+    public function testExtractNested()
+    {
+        $input = [
+            '__1__' => new Model(1, 'first'),
+            '__2__' => new Model(2, 'second'),
+        ];
+
+        $expected = '{"__1__":{"id":1,"name":"first"},"__2__":{"id":2,"name":"second"}}';
+
+        $this->assertExtracted($expected, $input, $this->getNestedMapper());
+    }
+
+    protected function getNestedMapper(): ArrayMapper
+    {
+        return new ArrayMapper('value', 'value', true, new Mapper(Model::class, [
+            new IdMapper('id'),
+            new StringMapper('name'),
+        ]));
     }
 
     protected function getMapperAllowNull(): ArrayMapper

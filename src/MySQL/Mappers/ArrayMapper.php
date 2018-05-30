@@ -11,10 +11,22 @@ namespace DjinORM\Repositories\Sql\MySQL\Mappers;
 use DjinORM\Djin\Exceptions\ExtractorException;
 use DjinORM\Djin\Exceptions\HydratorException;
 use DjinORM\Djin\Helpers\RepoHelper;
+use DjinORM\Djin\Mappers\Mapper;
 use DjinORM\Djin\Mappers\ScalarMapper;
 
 class ArrayMapper extends ScalarMapper
 {
+
+    /**
+     * @var Mapper
+     */
+    private $valuesMapper;
+
+    public function __construct(string $modelProperty, string $dbColumn = null, bool $allowNull = false, Mapper $valuesMapper = null)
+    {
+        parent::__construct($modelProperty, $dbColumn, $allowNull);
+        $this->valuesMapper = $valuesMapper;
+    }
 
     /**
      * @param array $data
@@ -36,6 +48,12 @@ class ArrayMapper extends ScalarMapper
         }
 
         $array = \json_decode($data[$column], true);
+
+        if ($this->valuesMapper) {
+            $array = array_map(function ($data) {
+                return $this->valuesMapper->hydrate($data);
+            }, $array);
+        }
 
         if ($array === null && json_last_error() !== JSON_ERROR_NONE) {
             throw new HydratorException('Json parse error: ' . json_last_error_msg(), 1);
@@ -62,6 +80,12 @@ class ArrayMapper extends ScalarMapper
             return [
                 $this->getDbColumn() => null
             ];
+        }
+
+        if ($this->valuesMapper) {
+            $array = array_map(function ($object) {
+                return $this->valuesMapper->extract($object);
+            }, $array);
         }
 
         $json = \json_encode($array);
