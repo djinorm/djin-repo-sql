@@ -20,12 +20,23 @@ class ArrayMapper extends ScalarMapper
     /**
      * @var Mapper
      */
-    private $valuesMapper;
+    private $nestedMapper;
+    /**
+     * @var bool
+     */
+    private $allowNullNested;
 
-    public function __construct(string $modelProperty, string $dbColumn = null, bool $allowNull = false, Mapper $valuesMapper = null)
+    public function __construct(
+        string $modelProperty,
+        string $dbColumn = null,
+        bool $allowNull = false,
+        Mapper $nestedMapper = null,
+        bool $allowNullNested = true
+    )
     {
         parent::__construct($modelProperty, $dbColumn, $allowNull);
-        $this->valuesMapper = $valuesMapper;
+        $this->nestedMapper = $nestedMapper;
+        $this->allowNullNested = $allowNullNested;
     }
 
     /**
@@ -49,9 +60,15 @@ class ArrayMapper extends ScalarMapper
 
         $array = \json_decode($data[$column], true);
 
-        if ($this->valuesMapper) {
-            $array = array_map(function ($data) {
-                return $this->valuesMapper->hydrate($data);
+        if ($this->nestedMapper) {
+            $array = array_map(function ($data) use ($object){
+                if (null === $data) {
+                    if ($this->isAllowNullNested()) {
+                        return null;
+                    }
+                    return new HydratorException("Null instead of nested object is not allowed in " . $this->getDescription($object));
+                }
+                return $this->nestedMapper->hydrate($data);
             }, $array);
         }
 
@@ -82,9 +99,15 @@ class ArrayMapper extends ScalarMapper
             ];
         }
 
-        if ($this->valuesMapper) {
-            $array = array_map(function ($object) {
-                return $this->valuesMapper->extract($object);
+        if ($this->nestedMapper) {
+            $array = array_map(function ($nestedObject) use ($object) {
+                if (null === $nestedObject) {
+                    if ($this->isAllowNullNested()) {
+                        return null;
+                    }
+                    new ExtractorException("Impossible to save null instead of nested object from " . $this->getDescription($object));
+                }
+                return $this->nestedMapper->extract($nestedObject);
             }, $array);
         }
 
@@ -96,5 +119,13 @@ class ArrayMapper extends ScalarMapper
         return [
             $this->getDbColumn() => $json
         ];
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAllowNullNested(): bool
+    {
+        return $this->allowNullNested;
     }
 }

@@ -44,9 +44,10 @@ class ArrayMapperTest extends MapperTestCase
         $expected = [
             '__1__' => new Model(1, 'first'),
             '__2__' => new Model(2, 'second'),
+            '__3__' => null
         ];
 
-        $input = '{"__1__": {"id": 1, "name": "first"}, "__2__": {"id": 2, "name": "second"}}';
+        $input = '{"__1__": {"id": 1, "name": "first"}, "__2__": {"id": 2, "name": "second"}, "__3__": null}';
 
         $this->assertHydrated($expected, $input, $this->getNestedMapper());
     }
@@ -80,9 +81,10 @@ class ArrayMapperTest extends MapperTestCase
         $input = [
             '__1__' => new Model(1, 'first'),
             '__2__' => new Model(2, 'second'),
+            '__3__' => null,
         ];
 
-        $expected = '{"__1__":{"id":1,"name":"first"},"__2__":{"id":2,"name":"second"}}';
+        $expected = '{"__1__":{"id":1,"name":"first"},"__2__":{"id":2,"name":"second"},"__3__":null}';
 
         $this->assertExtracted($expected, $input, $this->getNestedMapper());
     }
@@ -92,7 +94,7 @@ class ArrayMapperTest extends MapperTestCase
         return new ArrayMapper('value', 'value', true, new Mapper(Model::class, [
             new IdMapper('id'),
             new StringMapper('name'),
-        ]));
+        ]), true);
     }
 
     protected function getMapperAllowNull(): ArrayMapper
