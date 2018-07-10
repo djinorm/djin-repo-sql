@@ -58,7 +58,7 @@ class ArrayMapper extends ScalarMapper
             throw $this->nullHydratorException('array', $object);
         }
 
-        $array = \json_decode($data[$column], true);
+        $array = is_array($data[$column]) ? $data[$column] : \json_decode($data[$column], true);
 
         if ($this->nestedMapper) {
             $array = array_map(function ($data) use ($object){
