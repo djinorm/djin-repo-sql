@@ -8,27 +8,47 @@
 namespace DjinORM\Repositories\Sql;
 
 
-use DjinORM\Djin\Mappers\Mapper;
+use Adbar\Dot;
+use DjinORM\Djin\Mappers\ArrayMapperInterface;
+use DjinORM\Djin\Mappers\Handler\MappersHandler;
+use DjinORM\Djin\Mappers\Handler\MappersHandlerInterface;
+use DjinORM\Djin\Mappers\NestedMapperInterface;
 use DjinORM\Djin\Model\ModelInterface;
+use DjinORM\Djin\Repository\MapperRepositoryInterface;
 
-abstract class MapperSqlRepository extends SqlRepository
+abstract class MapperSqlRepository extends SqlRepository implements MapperRepositoryInterface
 {
 
-    /**
-     * @return Mapper
-     */
-    abstract protected function getMapper(): Mapper;
+    private $mapperHandler;
+
+    abstract protected function map(): array;
+
+    public function getMappersHandler(): MappersHandlerInterface
+    {
+        if (null === $this->mapperHandler) {
+            $this->mapperHandler = new MappersHandler(static::getModelClass(), $this->map());
+        }
+        return $this->mapperHandler;
+    }
 
     /**
      * Превращает массив в объект нужного класса
      * @param array $data
      * @return ModelInterface
-     * @throws \DjinORM\Djin\Exceptions\MismatchModelException
-     * @throws \ReflectionException
      */
     protected function hydrate(array $data): ModelInterface
     {
-        return $this->getMapper()->hydrate($data);
+        $data = $this->fromDashToDot($data);
+        $data = $this->fromDotToArray($data);
+
+        foreach ($this->getMappersHandler()->getDbAliasesToModelProperties() as $dbAlias => $modelProperty) {
+            if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
+                if ($mapper instanceof ArrayMapperInterface) {
+                    $data[$dbAlias] = json_decode($data[$dbAlias], true);
+                }
+            }
+        }
+        return $this->getMappersHandler()->hydrate($data);
     }
 
     /**
@@ -37,7 +57,52 @@ abstract class MapperSqlRepository extends SqlRepository
      */
     protected function extract(ModelInterface $object): array
     {
-        return $this->getMapper()->extract($object);
+        $data = $this->getMappersHandler()->extract($object);
+        foreach ($this->getMappersHandler()->getDbAliasesToModelProperties() as $dbAlias => $modelProperty) {
+
+            if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
+
+                if ($mapper instanceof ArrayMapperInterface) {
+                    $data[$dbAlias] = json_encode($data[$dbAlias]);
+                }
+
+                if ($mapper instanceof NestedMapperInterface) {
+                    $nested = new Dot([$dbAlias => $data[$dbAlias]]);
+                    unset($data[$dbAlias]);
+                    $data = array_merge($data, $nested->flatten('___'));
+                }
+
+            }
+        }
+
+        return $data;
+    }
+
+    private function fromDashToDot($array): array
+    {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $result[str_replace('___', '.', $key)] = $value;
+        }
+        return $result;
+    }
+
+    private function fromDotToDash($array): array
+    {
+        $result = [];
+        foreach ($array as $key => $value) {
+            $result[str_replace('.', '___', $key)] = $value;
+        }
+        return $result;
+    }
+
+    private function fromDotToArray($array): array
+    {
+        $dot = new Dot();
+        foreach ($array as $key => $value) {
+            $dot->set($key, $value);
+        }
+        return $dot->all();
     }
 
 }

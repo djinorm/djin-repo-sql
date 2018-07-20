@@ -17,16 +17,25 @@ class Model implements ModelInterface
 
     use ModelTrait;
 
-    public function __construct($id = null, string $name = '')
-    {
-        $this->id = new Id($id);
-        $this->name = $name;
-    }
-
     /** @var Id */
     public $id;
 
     /** @var string */
     public $name;
+
+    /** @var array */
+    public $Array;
+
+    /** @var Money */
+    public $Money;
+
+    /** @var Money[] */
+    public $Balances;
+
+    public function __construct($id = null, string $name = '')
+    {
+        $this->id = new Id($id);
+        $this->name = $name;
+    }
 
 }

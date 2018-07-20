@@ -41,18 +41,24 @@ abstract class SqlRepository implements RepositoryInterface
 
     /** @var ModelInterface[] */
     protected $models;
+    /**
+     * @var array
+     */
+    private $slaves;
 
     /**
      * Repository constructor.
      * @param ExtendedPdo $pdo
      * @param QueryFactory $factory
      * @param IdGeneratorInterface $idGenerator
+     * @param array $slaves
      */
-    public function __construct(ExtendedPdo $pdo, QueryFactory $factory, IdGeneratorInterface $idGenerator)
+    public function __construct(ExtendedPdo $pdo, QueryFactory $factory, IdGeneratorInterface $idGenerator, array $slaves = [])
     {
         $this->idGenerator = $idGenerator;
         $this->pdo = $pdo;
         $this->builder = $factory;
+        $this->slaves = $slaves;
     }
 
     /**
@@ -229,7 +235,7 @@ abstract class SqlRepository implements RepositoryInterface
      */
     protected function fetchOne(SelectInterface $select)
     {
-        return $this->selectStatement($select)->fetch();
+        return $this->selectStatement($select)->fetch($this->pdo::FETCH_ASSOC);
     }
 
     /**
@@ -238,7 +244,7 @@ abstract class SqlRepository implements RepositoryInterface
      */
     protected function fetchMany(SelectInterface $select): array
     {
-        return $this->selectStatement($select)->fetchAll();
+        return $this->selectStatement($select)->fetchAll($this->pdo::FETCH_ASSOC);
     }
 
 

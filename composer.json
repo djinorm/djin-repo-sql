@@ -12,12 +12,22 @@
             "role": "Main developer"
         }
     ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/djinorm/djin"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/XAKEPEHOK/php-dot-notation"
+        }
+    ],
     "require": {
         "php": ">=7.1.0",
-        "djinorm/djin": "^4.2",
+        "djinorm/djin": "5.x-dev",
+        "djinorm/djin-filter-sort-paginate": "^1.1",
         "aura/sql": "^2.5",
-        "aura/sqlquery": "^2.7",
-        "djinorm/djin-filter-sort-paginate": "^1.1"
+        "aura/sqlquery": "^2.7"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.1",
