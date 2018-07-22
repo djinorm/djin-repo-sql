@@ -16,10 +16,6 @@
         {
             "type": "vcs",
             "url": "https://github.com/djinorm/djin"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/XAKEPEHOK/php-dot-notation"
         }
     ],
     "require": {

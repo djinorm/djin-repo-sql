@@ -43,8 +43,21 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
 
         foreach ($this->getMappersHandler()->getDbAliasesToModelProperties() as $dbAlias => $modelProperty) {
             if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
+
                 if ($mapper instanceof ArrayMapperInterface) {
                     $data[$dbAlias] = json_decode($data[$dbAlias], true);
+                }
+
+                if ($mapper instanceof NestedMapperInterface) {
+                    $exists = false;
+                    foreach ($data[$dbAlias] as $value) {
+                        if ($value !== null) {
+                            $exists = true;
+                        }
+                    }
+                    if ($exists === false) {
+                        $data[$dbAlias] = null;
+                    }
                 }
             }
         }
@@ -58,7 +71,10 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
     protected function extract(ModelInterface $object): array
     {
         $data = $this->getMappersHandler()->extract($object);
-        foreach ($this->getMappersHandler()->getDbAliasesToModelProperties() as $dbAlias => $modelProperty) {
+        $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
+        $db2modelNested = $this->fromDotToArray($db2model);
+
+        foreach ($db2model as $dbAlias => $modelProperty) {
 
             if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
 
@@ -67,7 +83,15 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
                 }
 
                 if ($mapper instanceof NestedMapperInterface) {
-                    $nested = new Dot([$dbAlias => $data[$dbAlias]]);
+                    if ($data[$dbAlias] === null) {
+                        $values = array_combine(
+                            array_keys($db2modelNested[$dbAlias]),
+                            array_fill(0, count($db2modelNested[$dbAlias]), null)
+                        );
+                        $nested = new Dot([$dbAlias => $values]);
+                    } else {
+                        $nested = new Dot([$dbAlias => $data[$dbAlias]]);
+                    }
                     unset($data[$dbAlias]);
                     $data = array_merge($data, $nested->flatten('___'));
                 }
@@ -83,15 +107,6 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
         $result = [];
         foreach ($array as $key => $value) {
             $result[str_replace('___', '.', $key)] = $value;
-        }
-        return $result;
-    }
-
-    private function fromDotToDash($array): array
-    {
-        $result = [];
-        foreach ($array as $key => $value) {
-            $result[str_replace('.', '___', $key)] = $value;
         }
         return $result;
     }

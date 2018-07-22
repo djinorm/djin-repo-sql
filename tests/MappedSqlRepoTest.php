@@ -132,7 +132,7 @@ class MappedSqlRepoTest extends DbTestCase
         $model_2 = new Model();
         $model_2->name = 'new model';
 
-        //$this->repo->save($model_1);
+        $this->repo->save($model_1);
         $this->repo->save($model_2);
 
         $this->repo->freeUpMemory();
