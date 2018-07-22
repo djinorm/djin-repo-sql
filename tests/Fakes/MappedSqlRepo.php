@@ -67,6 +67,23 @@ class MappedSqlRepo extends MapperSqlRepository
                 new IntMapper('Amount', 'amount'),
                 new StringMapper('Currency', 'currency'),
             ])),
+            new SubclassMapper(
+                'Nested',
+                'nested',
+                new MappersHandler(Money::class, [
+                    new SubclassMapper(
+                        'Money',
+                        'money',
+                        new MappersHandler(Money::class, [
+                            new IntMapper('Amount', 'amount'),
+                            new StringMapper('Currency', 'currency'),
+                        ]),
+                        true
+                    ),
+                    new ArrayMapper('Array', 'array', true),
+                ]),
+                true
+            ),
         ];
     }
 

@@ -49,8 +49,10 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
                 }
 
                 if ($mapper instanceof NestedMapperInterface) {
+                    $nestedData = new Dot($data[$dbAlias]);
+                    $nestedData = $nestedData->flatten('.');
                     $exists = false;
-                    foreach ($data[$dbAlias] as $value) {
+                    foreach ($nestedData as $value) {
                         if ($value !== null) {
                             $exists = true;
                         }
@@ -61,6 +63,7 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
                 }
             }
         }
+
         return $this->getMappersHandler()->hydrate($data);
     }
 
@@ -72,7 +75,11 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
     {
         $data = $this->getMappersHandler()->extract($object);
         $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
-        $db2modelNested = $this->fromDotToArray($db2model);
+
+        $scheme = array_map(function () {
+            return null;
+        }, $db2model);
+        $scheme = $this->fromDotToArray($scheme);
 
         foreach ($db2model as $dbAlias => $modelProperty) {
 
@@ -84,16 +91,13 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
 
                 if ($mapper instanceof NestedMapperInterface) {
                     if ($data[$dbAlias] === null) {
-                        $values = array_combine(
-                            array_keys($db2modelNested[$dbAlias]),
-                            array_fill(0, count($db2modelNested[$dbAlias]), null)
-                        );
-                        $nested = new Dot([$dbAlias => $values]);
+                        $nested = new Dot([$dbAlias => $scheme[$dbAlias]]);
                     } else {
                         $nested = new Dot([$dbAlias => $data[$dbAlias]]);
                     }
                     unset($data[$dbAlias]);
-                    $data = array_merge($data, $nested->flatten('___'));
+                    $flatten = $nested->flatten('___');
+                    $data = array_merge($data, $flatten);
                 }
 
             }
