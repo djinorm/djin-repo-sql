@@ -31,6 +31,11 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
         return $this->mapperHandler;
     }
 
+    public function getAlias(string $modelProperty): string
+    {
+        return $this->getMappersHandler()->getModelPropertyToDbAlias($modelProperty);
+    }
+
     /**
      * Превращает массив в объект нужного класса
      * @param array $data
