@@ -70,7 +70,7 @@ class MappedSqlRepo extends MapperSqlRepository
             new SubclassMapper(
                 'Nested',
                 'nested',
-                new MappersHandler(Money::class, [
+                new MappersHandler(NestedModel::class, [
                     new SubclassMapper(
                         'Money',
                         'money',

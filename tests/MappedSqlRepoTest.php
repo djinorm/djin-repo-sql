@@ -18,6 +18,7 @@ use DjinORM\Repositories\Sql\Components\DbTestCase;
 use DjinORM\Repositories\Sql\Fakes\MappedSqlRepo;
 use DjinORM\Repositories\Sql\Fakes\Model;
 use DjinORM\Repositories\Sql\Fakes\Money;
+use DjinORM\Repositories\Sql\Fakes\NestedModel;
 use PHPUnit\DbUnit\DataSet\ArrayDataSet;
 
 class MappedSqlRepoTest extends DbTestCase
@@ -131,6 +132,9 @@ class MappedSqlRepoTest extends DbTestCase
 
         $model_2 = new Model();
         $model_2->name = 'new model';
+        $model_2->Nested = new NestedModel();
+        $model_2->Nested->Money = new Money(100, 'RUB');
+        $model_2->Nested->Array = [1, 2, 3];
 
         $this->repo->save($model_1);
         $this->repo->save($model_2);

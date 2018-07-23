@@ -4,10 +4,9 @@
  * Datetime: 22.07.2018 20:46
  */
 
-namespace DjinORM\Repositories\Sql\tests\Fakes;
+namespace DjinORM\Repositories\Sql\Fakes;
 
 
-use DjinORM\Repositories\Sql\Fakes\Money;
 
 class NestedModel
 {

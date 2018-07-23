@@ -9,6 +9,7 @@ namespace DjinORM\Repositories\Sql;
 
 
 use Adbar\Dot;
+use DjinORM\Djin\Mappers\ArrayMapper;
 use DjinORM\Djin\Mappers\ArrayMapperInterface;
 use DjinORM\Djin\Mappers\Handler\MappersHandler;
 use DjinORM\Djin\Mappers\Handler\MappersHandlerInterface;
@@ -33,7 +34,15 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
 
     public function getAlias(string $modelProperty): string
     {
-        return $this->getMappersHandler()->getModelPropertyToDbAlias($modelProperty);
+        $alias = $this->getMappersHandler()->getModelPropertyToDbAlias($modelProperty);
+        return str_replace('.', '___', $alias);
+    }
+
+    protected function getIdName(): string
+    {
+        /** @var ModelInterface $class */
+        $class = $this->getModelClass();
+        return $this->getAlias($class::getModelIdPropertyName());
     }
 
     /**
@@ -79,36 +88,49 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
     protected function extract(ModelInterface $object): array
     {
         $data = $this->getMappersHandler()->extract($object);
-        $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
+        $this->extractConvertRecursive('', $data);
+        return $data;
+    }
 
+    protected function extractConvertRecursive(string $prefix, array &$data)
+    {
+        $prefix = empty($prefix) ? '' : ($prefix . '.');
+        foreach ($data as $dbAlias => $value) {
+            $path = $prefix . $dbAlias;
+            $mapper = $this->getMappersHandler()->getMapperByDbAlias($path);
+            if (null === $mapper) {
+                continue;
+            }
+
+            if ($mapper instanceof ArrayMapper) {
+                if (null !== $value) {
+                    $this->extractConvertRecursive($path, $value);
+                }
+                $data[$dbAlias] = json_encode($value);
+            }
+
+            if ($mapper instanceof NestedMapperInterface) {
+                if (null !== $value) {
+                    $this->extractConvertRecursive($path, $value);
+                } else {
+                    $value = [];
+                }
+                $scheme = $this->getScheme()->get($path);
+                $extracted = array_merge($scheme, $value);
+                unset($data[$dbAlias]);
+                $flatten = (new Dot([$dbAlias => $extracted]))->flatten('___');
+                $data = array_merge($data, $flatten);
+            }
+        }
+    }
+
+    private function getScheme(): Dot
+    {
+        $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
         $scheme = array_map(function () {
             return null;
         }, $db2model);
-        $scheme = $this->fromDotToArray($scheme);
-
-        foreach ($db2model as $dbAlias => $modelProperty) {
-
-            if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
-
-                if ($mapper instanceof ArrayMapperInterface) {
-                    $data[$dbAlias] = json_encode($data[$dbAlias]);
-                }
-
-                if ($mapper instanceof NestedMapperInterface) {
-                    if ($data[$dbAlias] === null) {
-                        $nested = new Dot([$dbAlias => $scheme[$dbAlias]]);
-                    } else {
-                        $nested = new Dot([$dbAlias => $data[$dbAlias]]);
-                    }
-                    unset($data[$dbAlias]);
-                    $flatten = $nested->flatten('___');
-                    $data = array_merge($data, $flatten);
-                }
-
-            }
-        }
-
-        return $data;
+        return new Dot($this->fromDotToArray($scheme));
     }
 
     private function fromDashToDot($array): array
