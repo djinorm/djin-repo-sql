@@ -53,7 +53,7 @@ class MappedSqlRepo extends MapperSqlRepository
         return [
             new IdMapper('id'),
             new StringMapper('name'),
-            new ArrayMapper('Array', 'array', true),
+            new ArrayMapper('Array', 'array', false),
             new SubclassMapper(
                 'Money',
                 'money',
@@ -83,6 +83,23 @@ class MappedSqlRepo extends MapperSqlRepository
                     new ArrayMapper('Array', 'array', true),
                 ]),
                 true
+            ),
+            new SubclassMapper(
+                'Nested_must',
+                'nested_must',
+                new MappersHandler(NestedModel::class, [
+                    new SubclassMapper(
+                        'Money',
+                        'money',
+                        new MappersHandler(Money::class, [
+                            new IntMapper('Amount', 'amount'),
+                            new StringMapper('Currency', 'currency'),
+                        ]),
+                        true
+                    ),
+                    new ArrayMapper('Array', 'array', true),
+                ]),
+                false
             ),
         ];
     }

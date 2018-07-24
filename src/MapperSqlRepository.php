@@ -52,33 +52,60 @@ abstract class MapperSqlRepository extends SqlRepository implements MapperReposi
      */
     protected function hydrate(array $data): ModelInterface
     {
+        $this->hydrateConvertRecursive('', $data);
+        $data = array_merge(
+            $this->getScheme()->all(),
+            $data
+        );
+        return $this->getMappersHandler()->hydrate($data);
+    }
+
+    protected function hydrateConvertRecursive(string $prefix, array &$data)
+    {
         $data = $this->fromDashToDot($data);
         $data = $this->fromDotToArray($data);
 
-        foreach ($this->getMappersHandler()->getDbAliasesToModelProperties() as $dbAlias => $modelProperty) {
-            if ($mapper = $this->getMappersHandler()->getMappers()[$modelProperty] ?? null) {
+        if (!empty($prefix)) {
+            $prefix = $prefix . '.';
+        }
 
-                if ($mapper instanceof ArrayMapperInterface) {
-                    $data[$dbAlias] = json_decode($data[$dbAlias], true);
+        foreach ($data as $key => $value) {
+            $path = $prefix . $key;
+
+            $mapper = $this->getMappersHandler()->getMapperByDbAlias($path);
+
+            $isArrayMapper = $mapper instanceof ArrayMapperInterface;
+            $isNestedMapper = $mapper instanceof NestedMapperInterface;
+
+            if ($isArrayMapper) {
+                if (!is_array($data[$key])) {
+                    $data[$key] = json_decode($value, true);
                 }
+            }
 
-                if ($mapper instanceof NestedMapperInterface) {
-                    $nestedData = new Dot($data[$dbAlias]);
-                    $nestedData = $nestedData->flatten('.');
-                    $exists = false;
-                    foreach ($nestedData as $value) {
-                        if ($value !== null) {
-                            $exists = true;
-                        }
-                    }
-                    if ($exists === false) {
-                        $data[$dbAlias] = null;
-                    }
+            if (is_array($data[$key])) {
+                $this->hydrateConvertRecursive($path, $data[$key]);
+
+                if (($isArrayMapper || $isNestedMapper) && $mapper->isNullAllowed()) {
+                    $data[$key] = $this->collapseNullArray($data[$key]);
                 }
             }
         }
 
-        return $this->getMappersHandler()->hydrate($data);
+        return $data;
+    }
+
+    protected function collapseNullArray(?array $array): ?array
+    {
+        if (null === $array || empty($array)) {
+            return null;
+        }
+
+        $array = array_filter($array, function ($value) {
+            return $value !== null;
+        });
+
+        return count($array) ? $array : null;
     }
 
     /**

@@ -11,7 +11,6 @@ namespace DjinORM\Repositories\Sql\Fakes;
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Model\ModelTrait;
-use DjinORM\Repositories\Sql\tests\Fakes\NestedModel;
 
 class Model implements ModelInterface
 {
@@ -35,6 +34,9 @@ class Model implements ModelInterface
 
     /** @var NestedModel */
     public $Nested;
+
+    /** @var NestedModel */
+    public $Nested_must;
 
     public function __construct($id = null, string $name = '')
     {
