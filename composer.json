@@ -20,7 +20,7 @@
     ],
     "require": {
         "php": ">=7.1.0",
-        "djinorm/djin": "5.x-dev",
+        "djinorm/djin": "5.xz-dev",
         "djinorm/djin-filter-sort-paginate": "^1.1",
         "aura/sql": "^2.5",
         "aura/sqlquery": "^2.7"

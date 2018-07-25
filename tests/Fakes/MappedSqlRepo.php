@@ -10,9 +10,9 @@ namespace DjinORM\Repositories\Sql\Fakes;
 
 use Aura\SqlQuery\QueryInterface;
 use DjinORM\Djin\Mappers\ArrayMapper;
-use DjinORM\Djin\Mappers\Handler\MappersHandler;
 use DjinORM\Djin\Mappers\IdMapper;
 use DjinORM\Djin\Mappers\IntMapper;
+use DjinORM\Djin\Mappers\NestedArrayMapper;
 use DjinORM\Djin\Mappers\StringMapper;
 use DjinORM\Djin\Mappers\NestedMapper;
 use DjinORM\Repositories\Sql\MappedSqlRepository;
@@ -57,48 +57,59 @@ class MappedSqlRepo extends MappedSqlRepository
             new NestedMapper(
                 'Money',
                 'money',
-                new MappersHandler(Money::class, [
+                Money::class,
+                [
                     new IntMapper('Amount', 'amount'),
                     new StringMapper('Currency', 'currency'),
-                ]),
+                ],
                 true
             ),
-            new ArrayMapper('Balances', 'balances', true, new MappersHandler(Money::class, [
-                new IntMapper('Amount', 'amount'),
-                new StringMapper('Currency', 'currency'),
-            ])),
+            new NestedArrayMapper(
+                'Balances',
+                'balances',
+                Money::class,
+                [
+                    new IntMapper('Amount', 'amount'),
+                    new StringMapper('Currency', 'currency'),
+                ],
+                true
+            ),
             new NestedMapper(
                 'Nested',
                 'nested',
-                new MappersHandler(NestedModel::class, [
+                NestedModel::class,
+                [
                     new NestedMapper(
                         'Money',
                         'money',
-                        new MappersHandler(Money::class, [
+                        Money::class,
+                        [
                             new IntMapper('Amount', 'amount'),
                             new StringMapper('Currency', 'currency'),
-                        ]),
+                        ],
                         true
                     ),
                     new ArrayMapper('Array', 'array', true),
-                ]),
+                ],
                 true
             ),
             new NestedMapper(
                 'Nested_must',
                 'nested_must',
-                new MappersHandler(NestedModel::class, [
+                NestedModel::class,
+                [
                     new NestedMapper(
                         'Money',
                         'money',
-                        new MappersHandler(Money::class, [
+                        Money::class,
+                        [
                             new IntMapper('Amount', 'amount'),
                             new StringMapper('Currency', 'currency'),
-                        ]),
+                        ],
                         true
                     ),
                     new ArrayMapper('Array', 'array', true),
-                ]),
+                ],
                 false
             ),
         ];
