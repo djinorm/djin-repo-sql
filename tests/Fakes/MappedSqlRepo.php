@@ -14,11 +14,11 @@ use DjinORM\Djin\Mappers\Handler\MappersHandler;
 use DjinORM\Djin\Mappers\IdMapper;
 use DjinORM\Djin\Mappers\IntMapper;
 use DjinORM\Djin\Mappers\StringMapper;
-use DjinORM\Djin\Mappers\SubclassMapper;
-use DjinORM\Repositories\Sql\MapperSqlRepository;
+use DjinORM\Djin\Mappers\NestedMapper;
+use DjinORM\Repositories\Sql\MappedSqlRepository;
 use PDOStatement;
 
-class MappedSqlRepo extends MapperSqlRepository
+class MappedSqlRepo extends MappedSqlRepository
 {
 
     protected $queryCount = 0;
@@ -54,7 +54,7 @@ class MappedSqlRepo extends MapperSqlRepository
             new IdMapper('id'),
             new StringMapper('name'),
             new ArrayMapper('Array', 'array', false),
-            new SubclassMapper(
+            new NestedMapper(
                 'Money',
                 'money',
                 new MappersHandler(Money::class, [
@@ -67,11 +67,11 @@ class MappedSqlRepo extends MapperSqlRepository
                 new IntMapper('Amount', 'amount'),
                 new StringMapper('Currency', 'currency'),
             ])),
-            new SubclassMapper(
+            new NestedMapper(
                 'Nested',
                 'nested',
                 new MappersHandler(NestedModel::class, [
-                    new SubclassMapper(
+                    new NestedMapper(
                         'Money',
                         'money',
                         new MappersHandler(Money::class, [
@@ -84,11 +84,11 @@ class MappedSqlRepo extends MapperSqlRepository
                 ]),
                 true
             ),
-            new SubclassMapper(
+            new NestedMapper(
                 'Nested_must',
                 'nested_must',
                 new MappersHandler(NestedModel::class, [
-                    new SubclassMapper(
+                    new NestedMapper(
                         'Money',
                         'money',
                         new MappersHandler(Money::class, [

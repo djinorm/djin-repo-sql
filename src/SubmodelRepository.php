@@ -12,7 +12,7 @@ use DjinORM\Djin\Helpers\DjinHelper;
 use DjinORM\Djin\Model\ModelInterface;
 use InvalidArgumentException;
 
-abstract class SubmodelRepository extends MapperSqlRepository
+abstract class SubmodelRepository extends MappedSqlRepository
 {
 
     protected $parentPreload;
