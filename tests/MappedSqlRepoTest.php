@@ -7,6 +7,11 @@
 
 namespace DjinORM\Repositories\Sql;
 
+use DjinORM\Components\FilterSortPaginate\Filters\AndFilter;
+use DjinORM\Components\FilterSortPaginate\Filters\CompareFilter;
+use DjinORM\Components\FilterSortPaginate\Filters\EqualsFilter;
+use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
+use DjinORM\Components\FilterSortPaginate\Sort;
 use DjinORM\Djin\Id\MemoryIdGenerator;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Repositories\Sql\Components\DbTestCase;
@@ -114,6 +119,24 @@ class MappedSqlRepoTest extends DbTestCase
         $model->Nested = null;
         $this->repo->update($model);
         $this->assertModelSaved($model);
+    }
+
+    public function testQuoter()
+    {
+        $fsp = new FilterSortPaginate(
+            null,
+            new Sort(['Nested.Money.Amount' => Sort::SORT_ASC]),
+            new AndFilter([
+                new EqualsFilter('Nested.Money', 1),
+                new CompareFilter('Nested_must.Money.Amount', CompareFilter::GREAT_THAN, 1)
+            ])
+        );
+
+        $this->repo->findWithFilterSortPaginate($fsp);
+
+        $expected = 'SELECT * FROM `djin-repo` WHERE ( nested___money = :equals_1 AND nested_must___money___amount > :compare_2 ) ORDER BY nested___money___amount ASC';
+        $actual = preg_replace('~\s+~', ' ', $this->repo->lastQuery->getStatement());
+        $this->assertEquals($expected, $actual);
     }
 
     protected function assertModelSaved(ModelInterface $model)

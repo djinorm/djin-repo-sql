@@ -23,6 +23,9 @@ class MappedSqlRepo extends MappedSqlRepository
 
     protected $queryCount = 0;
 
+    /** @var QueryInterface */
+    public $lastQuery;
+
     public function findAll(): array
     {
         return $this->fetchAndPopulateMany($this->select());
@@ -44,6 +47,7 @@ class MappedSqlRepo extends MappedSqlRepository
 
     protected function getStatement(QueryInterface $query): PDOStatement
     {
+        $this->lastQuery = $query;
         $this->queryCount++;
         return parent::getStatement($query);
     }

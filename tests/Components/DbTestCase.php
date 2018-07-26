@@ -9,7 +9,6 @@ namespace DjinORM\Repositories\Sql\Components;
 
 
 use Aura\Sql\ExtendedPdo;
-use Aura\SqlQuery\QueryFactory;
 use DjinORM\Djin\TestHelpers\IdComparator;
 use PHPUnit\DbUnit\DataSet\ArrayDataSet;
 use PHPUnit\DbUnit\TestCaseTrait;
@@ -25,7 +24,7 @@ abstract class DbTestCase extends TestCase
     /** @var ExtendedPdo */
     private static $pdo;
 
-    /** @var QueryFactory */
+    /** @var MappedQueryFactory */
     private static $queryFactory;
 
     private $connection;
@@ -38,11 +37,11 @@ abstract class DbTestCase extends TestCase
         return DbTestCase::$pdo;
     }
 
-    protected function getQueryFactory(): QueryFactory
+    protected function getQueryFactory(): MappedQueryFactory
     {
         if (DbTestCase::$queryFactory == null) {
             $db = substr($GLOBALS['DB_DSN'], 0, strpos($GLOBALS['DB_DSN'], ':'));
-            DbTestCase::$queryFactory = new QueryFactory($db);
+            DbTestCase::$queryFactory = new MappedQueryFactory($db);
         }
         return DbTestCase::$queryFactory;
     }

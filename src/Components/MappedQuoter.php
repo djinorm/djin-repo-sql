@@ -34,16 +34,13 @@ class MappedQuoter extends Quoter
         $this->quote_name_suffix = $quote_name_suffix;
     }
 
-    protected function replaceName($name)
+    protected function replaceNamesIn($text)
     {
-        $name = trim($name);
-        if ($name == '*') {
-            return $name;
-        }
-
-        return $this->quote_name_prefix
-            . ($this->quoteCallback)($name)
-            . $this->quote_name_suffix;
+        $regexp = '~(\b)([a-z_][a-z0-9_]*)(\.([a-z_][a-z0-9_]*)(\b))+~ui';
+        $text = preg_replace_callback($regexp, function ($value) {
+            return ($this->quoteCallback)($value[0]);
+        }, $text);
+        return parent::replaceNamesIn($text);
     }
 
 }

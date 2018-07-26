@@ -45,11 +45,4 @@ class MappedQuoterTest extends TestCase
         $this->assertEmpty($this->quoter->getQuoteNamePrefix());
     }
 
-    public function testQuoteName()
-    {
-        $this->assertEquals('ytrewq', $this->quoter->quoteName('qwerty'));
-        $this->assertEquals('ytrewq.ewq', $this->quoter->quoteName('qwerty.qwe'));
-        $this->assertEquals('ytrewq AS ewq', $this->quoter->quoteName('qwerty as qwe'));
-        $this->assertEquals('ytrewq.ewq AS ewq', $this->quoter->quoteName('qwerty.qwe as qwe'));
-    }
 }
