@@ -13,6 +13,11 @@ use Aura\SqlQuery\QueryFactory;
 class MappedQueryFactory extends QueryFactory
 {
 
+    public function getQuoter()
+    {
+        return parent::getQuoter();
+    }
+
     public function setQuoter(MappedQuoter $quoter)
     {
         $this->quoter = $quoter;
