@@ -12,12 +12,6 @@
             "role": "Main developer"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/djinorm/djin"
-        }
-    ],
     "require": {
         "php": ">=7.1.0",
         "djinorm/djin": "5.xz-dev",
