@@ -14,6 +14,8 @@
     ],
     "require": {
         "php": ">=7.1.0",
+        "ext-PDO": "*",
+        "ext-json": "*",
         "djinorm/djin": "^5.0",
         "djinorm/djin-filter-sort-paginate": "^1.1",
         "aura/sql": "^2.5",

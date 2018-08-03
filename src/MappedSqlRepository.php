@@ -65,12 +65,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return $this->getAlias($class::getModelIdPropertyName());
     }
 
-    /**
-     * Превращает массив в объект нужного класса
-     * @param array $data
-     * @return ModelInterface
-     */
-    protected function hydrate(array $data): ModelInterface
+    protected function convertHydrateData(array $data): array
     {
         $dotData = $this->convertNotation($data, $this->getNotationString(), '.');
         $data = new Dot($this->fromDotToArray($dotData));
@@ -92,8 +87,24 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
             }
         }
 
-        $data = array_merge($this->getScheme()->all(), $data->all());
+        return array_merge($this->getScheme()->all(), $data->all());
+    }
+
+    /**
+     * Превращает массив в объект нужного класса
+     * @param array $data
+     * @return ModelInterface
+     */
+    protected function hydrate(array $data): ModelInterface
+    {
+        $data = $this->convertHydrateData($data);
         return $this->getMappersHandler()->hydrate($data);
+    }
+
+    protected function convertExtractData(array $data): array
+    {
+        $this->extractRecursive('', $data);
+        return $this->convertNotation($data, '.', $this->getNotationString());
     }
 
     /**
@@ -103,8 +114,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
     protected function extract(ModelInterface $object): array
     {
         $data = $this->getMappersHandler()->extract($object);
-        $this->extractRecursive('', $data);
-        return $this->convertNotation($data, '.', $this->getNotationString());
+        return $this->convertExtractData($data);
     }
 
     protected function extractRecursive(string $prefix, array &$data)
@@ -146,7 +156,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         }
     }
 
-    private function getScheme(): Dot
+    protected function getScheme(): Dot
     {
         $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
         $scheme = array_map(function () {
@@ -155,7 +165,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return new Dot($this->fromDotToArray($scheme));
     }
 
-    private function convertNotation($array, string $from, string $to): array
+    protected function convertNotation($array, string $from, string $to): array
     {
         $result = [];
         foreach ($array as $key => $value) {
@@ -164,7 +174,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return $result;
     }
 
-    private function fromDotToArray($array): array
+    protected function fromDotToArray($array): array
     {
         $dot = new Dot();
         foreach ($array as $key => $value) {
