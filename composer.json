@@ -13,10 +13,10 @@
         }
     ],
     "require": {
-        "php": ">=7.1.0",
+        "php": ">=7.2.0",
         "ext-PDO": "*",
         "ext-json": "*",
-        "djinorm/djin": "^5.0",
+        "djinorm/djin": "^6.0",
         "djinorm/djin-filter-sort-paginate": "^1.1",
         "aura/sql": "^2.5",
         "aura/sqlquery": "^2.7"

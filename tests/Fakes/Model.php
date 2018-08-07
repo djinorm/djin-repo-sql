@@ -44,4 +44,8 @@ class Model implements ModelInterface
         $this->name = $name;
     }
 
+    public static function getModelName(): string
+    {
+        return 'model';
+    }
 }

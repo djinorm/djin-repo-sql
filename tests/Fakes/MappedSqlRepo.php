@@ -57,64 +57,64 @@ class MappedSqlRepo extends MappedSqlRepository
         return [
             new IdMapper('id'),
             new StringMapper('name'),
-            new ArrayMapper('Array', 'array', false),
+            new ArrayMapper('Array', false, 'array'),
             new NestedMapper(
                 'Money',
-                'money',
                 Money::class,
                 [
-                    new IntMapper('Amount', 'amount'),
-                    new StringMapper('Currency', 'currency'),
+                    new IntMapper('Amount', false, 'amount'),
+                    new StringMapper('Currency', null, false, 'currency'),
                 ],
-                true
+                true,
+                'money'
             ),
             new NestedArrayMapper(
                 'Balances',
-                'balances',
                 Money::class,
                 [
-                    new IntMapper('Amount', 'amount'),
-                    new StringMapper('Currency', 'currency'),
+                    new IntMapper('Amount', false, 'amount'),
+                    new StringMapper('Currency', null, false, 'currency'),
                 ],
-                true
+                true,
+                'balances'
             ),
             new NestedMapper(
                 'Nested',
-                'nested',
                 NestedModel::class,
                 [
                     new NestedMapper(
                         'Money',
-                        'money',
                         Money::class,
                         [
-                            new IntMapper('Amount', 'amount'),
-                            new StringMapper('Currency', 'currency'),
+                            new IntMapper('Amount', false, 'amount'),
+                            new StringMapper('Currency', null, false, 'currency'),
                         ],
-                        true
+                        true,
+                        'money'
                     ),
-                    new ArrayMapper('Array', 'array', true),
+                    new ArrayMapper('Array', true, 'array'),
                 ],
-                true
+                true,
+                'nested'
             ),
             new NestedMapper(
                 'Nested_must',
-                'nested_must',
                 NestedModel::class,
                 [
                     new NestedMapper(
                         'Money',
-                        'money',
                         Money::class,
                         [
-                            new IntMapper('Amount', 'amount'),
-                            new StringMapper('Currency', 'currency'),
+                            new IntMapper('Amount', false, 'amount'),
+                            new StringMapper('Currency', null, false, 'currency'),
                         ],
-                        true
+                        true,
+                        'money'
                     ),
-                    new ArrayMapper('Array', 'array', true),
+                    new ArrayMapper('Array', true, 'array'),
                 ],
-                false
+                false,
+                'nested_must'
             ),
         ];
     }
