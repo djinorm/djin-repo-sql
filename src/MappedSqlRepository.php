@@ -14,6 +14,7 @@ use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Mappers\ArrayMapperInterface;
 use DjinORM\Djin\Mappers\Handler\MappersHandler;
 use DjinORM\Djin\Mappers\Handler\MappersHandlerInterface;
+use DjinORM\Djin\Mappers\NestedMapper;
 use DjinORM\Djin\Mappers\NestedMapperInterface;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\MappedRepositoryInterface;
@@ -44,11 +45,22 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return $this->mapperHandler;
     }
 
+    /**
+     * Строка, которая используется как разделитель вложенных сущностей при преобразовании их в плоскую
+     * структуру. Это могла бы быть точечная нотация, но с ней есть проблемы в ряде СУБД
+     * @return string
+     */
     public function getNotationString(): string
     {
         return '___';
     }
 
+    /**
+     * Возвращает алиас, имя поля в базе по имени поля в модели и преобразовывает его с использованием
+     * @see getNotationString()
+     * @param string $modelProperty
+     * @return string
+     */
     public function getAlias(string $modelProperty): string
     {
         $alias = $this->getMappersHandler()->getModelPropertyToDbAlias($modelProperty);
@@ -58,6 +70,10 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return str_replace('.', $this->getNotationString(), $alias);
     }
 
+    /**
+     * Возвращает имя поля id в базе
+     * @return string
+     */
     protected function getIdName(): string
     {
         /** @var ModelInterface $class */
@@ -65,58 +81,57 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return $this->getAlias($class::getModelIdPropertyName());
     }
 
-    protected function convertHydrateData(array $data): array
-    {
-        $dotData = $this->convertNotation($data, $this->getNotationString(), '.');
-        $data = new Dot($this->fromDotToArray($dotData));
-        $nestedNulls = array_diff_key($dotData, $data->flatten('.'));
-        krsort($nestedNulls);
-        foreach ($nestedNulls as $key => $value) {
-            if ((int) $value < 1) {
-                $data->set($key, null);
-            }
-        }
-
-        foreach ($data->flatten('.') as $key => $value) {
-            $mapper = $this->getMappersHandler()->getMapperByDbAlias($key);
-            if ($mapper instanceof ArrayMapperInterface) {
-                if (is_string($value)) {
-                    $value = json_decode($value, true);
-                    $data->set($key, $value);
-                }
-            }
-        }
-
-        return array_merge($this->getScheme()->all(), $data->all());
-    }
-
     /**
-     * Превращает массив в объект нужного класса
-     * @param array $data
-     * @return ModelInterface
-     */
-    protected function hydrate(array $data): ModelInterface
-    {
-        $data = $this->convertHydrateData($data);
-        return $this->getMappersHandler()->hydrate($data);
-    }
-
-    protected function convertExtractData(array $data): array
-    {
-        $this->extractRecursive('', $data);
-        return $this->convertNotation($data, '.', $this->getNotationString());
-    }
-
-    /**
+     * Извлекает данные из модели и возвращает их в формате, пригодном для сохранения в таблицу.
      * @param ModelInterface $object
      * @return array
      */
     protected function extract(ModelInterface $object): array
     {
         $data = $this->getMappersHandler()->extract($object);
-        return $this->convertExtractData($data);
+        return $this->convertExtractedData($data);
     }
 
+    /**
+     * Преобразовывает извлеченные мапперами данные в формат, требуемый для сохранения в базу
+     * @param array $data
+     * @return array
+     */
+    protected function convertExtractedData(array $data): array
+    {
+        $this->extractRecursive('', $data);
+        return $this->convertNotation($data, '.', $this->getNotationString());
+    }
+
+    /**
+     * Преобразует структуру данных, извлеченную из модели при помощи мапперов в плоский массив,
+     * пригодный для сохранения в таблицу. Например, структура вида
+     *
+     * [
+     *      'data' => [
+     *          'nested' => [
+     *              'id' => 10,
+     *              'name' => 'Timur',
+     *          ]
+     *      ]
+     * ]
+     *
+     * будет преобразована в массив вида
+     *
+     * [
+     *      'data' => true,
+     *      'data___nested' => true,
+     *      'data___nested___id' => 10,
+     *      'data___nested___name' => 'Timur',
+     * ]
+     *
+     * В примере выше 'data' => true и 'data___nested' => true нужны для определения существования
+     * вложенных объектов. Они нужны только если @see NestedMapper разрешает null. Если не разрешает,
+     * то их использование не обязательно
+     *
+     * @param string $prefix - путь в точечной нотации, который нужно сделать плоским
+     * @param array $data - массив данных, переданный по ссылке
+     */
     protected function extractRecursive(string $prefix, array &$data)
     {
         if (!empty($prefix)) {
@@ -142,7 +157,12 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
 
                 unset($data[$key]);
 
-                $nullCheckerArray = [$key => (int) (bool) $value];
+                if ($mapper->isNullAllowed()) {
+                    $nullCheckerArray = [$key => (int) (bool) $value];
+                } else {
+                    $nullCheckerArray = [];
+                }
+
                 if (null === $value) {
                     $value = array_fill_keys(
                         array_keys($mapper->getNestedMappersHandler()->getDbAliasesToModelProperties()),
@@ -156,6 +176,86 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         }
     }
 
+    /**
+     * Превращает массив в объект нужного класса
+     * @param array $data
+     * @return ModelInterface
+     */
+    protected function hydrate(array $data): ModelInterface
+    {
+        $data = $this->convertHydrationData($data);
+        return $this->getMappersHandler()->hydrate($data);
+    }
+
+    /**
+     * Преобразует извлеченные плоские данные из БД во вложенную структуру, пригодную для гидрации
+     * модели. Например, структура вида
+     *
+     * [
+     *      'data' => true,
+     *      'data___nested' => true,
+     *      'data___nested___id' => 10
+     *      'data___nested___name' => 'Timur'
+     * ]
+     *
+     * будет преобразована в массив вида
+     * [
+     *      'data' => [
+     *          'nested' => [
+     *              'id' => 10,
+     *              'name' => 'Timur',
+     *          ]
+     *      ]
+     * ]
+     *
+     * В примере выше 'data' => true и 'data___nested' => true нужны для определения существования
+     * вложенных объектов. Они нужны только если @see NestedMapper разрешает null. Если не разрешает,
+     * то их использование не обязательно
+     *
+     * @param array $data
+     * @return array
+     */
+    protected function convertHydrationData(array $data): array
+    {
+        //Преобразование данных в точечную нотацию
+        $dotData = $this->convertNotation($data, $this->getNotationString(), '.');
+
+        //Объект Dot с возможностью обращения к массиву точечной нотацией
+        $data = new Dot($this->fromDotToArray($dotData));
+
+        //Здесь мы определяем, какие из вложенных объектов у нас не заданы (должны быть null)
+        $nestedNulls = array_diff_key($dotData, $data->flatten('.'));
+        krsort($nestedNulls);
+        foreach ($nestedNulls as $key => $value) {
+            if ((int) $value < 1) {
+                $mapper = $this->getMappersHandler()->getMapperByDbAlias($key);
+                if ($mapper->isNullAllowed()) {
+                    $data->set($key, null);
+                }
+            }
+        }
+
+        //Массивы в плоском виде в таблице реляционной БД можно хранить только в виде json, поэтому
+        //мы смотрим на мапперы, реализующие ArrayMapperInterface и делаем для этих данных json_decode
+        foreach ($data->flatten('.') as $key => $value) {
+            $mapper = $this->getMappersHandler()->getMapperByDbAlias($key);
+            if ($mapper instanceof ArrayMapperInterface) {
+                if (is_string($value)) {
+                    $value = json_decode($value, true);
+                    $data->set($key, $value);
+                }
+            }
+        }
+
+        return array_merge($this->getScheme()->all(), $data->all());
+    }
+
+    /**
+     * Возвращает схему, которые извлекают мапперы из модели, но вместо реальных значений везде null.
+     * Используется в @see convertHydrationData() c целью перезаписи в базе существующих значений
+     * вложенных объектов, когда вложенные объекты были убраны (установлены в null)
+     * @return Dot
+     */
     protected function getScheme(): Dot
     {
         $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
@@ -165,6 +265,13 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return new Dot($this->fromDotToArray($scheme));
     }
 
+    /**
+     * Преобразование нотаций. Например, из точечной нотации в ___ и наоборот
+     * @param $array
+     * @param string $from
+     * @param string $to
+     * @return array
+     */
     protected function convertNotation($array, string $from, string $to): array
     {
         $result = [];
@@ -174,6 +281,11 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         return $result;
     }
 
+    /**
+     * Преобразует точечную нотацию в обычный массив
+     * @param $array
+     * @return array
+     */
     protected function fromDotToArray($array): array
     {
         $dot = new Dot();
