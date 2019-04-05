@@ -59,7 +59,6 @@ abstract class DbTestCase extends TestCase
 
     protected function setUp()
     {
-        $this->registerComparator(new IdComparator());
         parent::setUp();
         $this->dbSetUp();
     }

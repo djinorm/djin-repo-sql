@@ -121,24 +121,6 @@ class MappedSqlRepoTest extends DbTestCase
         $this->assertModelSaved($model);
     }
 
-    public function testQuoter()
-    {
-        $fsp = new FilterSortPaginate(
-            null,
-            new Sort(['Nested.Money.Amount' => Sort::SORT_ASC]),
-            new AndFilter([
-                new EqualsFilter('Nested.Money', 1),
-                new CompareFilter('Nested_must.Money.Amount', CompareFilter::GREAT_THAN, 1)
-            ])
-        );
-
-        $this->repo->findWithFilterSortPaginate($fsp);
-
-        $expected = 'SELECT * FROM `djin-repo` WHERE ( nested___money = :equals_1 AND nested_must___money___amount > :compare_2 ) ORDER BY nested___money___amount ASC';
-        $actual = preg_replace('~\s+~', ' ', $this->repo->lastQuery->getStatement());
-        $this->assertEquals($expected, $actual);
-    }
-
     protected function assertModelSaved(ModelInterface $model)
     {
         $this->repo->freeUpMemory();
@@ -153,38 +135,38 @@ class MappedSqlRepoTest extends DbTestCase
                 [
                     'id' => 1,
                     'name' => 'first',
-                    'array' => json_encode([
+                    'Array' => json_encode([
                         'one' => 1,
                         'two' => 2,
                         'array' => [1, 2, 3]
                     ]),
-                    'balances' => json_encode([
+                    'Balances' => json_encode([
                         [
-                            'amount' => 111,
-                            'currency' => 'USD'
+                            'Amount' => 111,
+                            'Currency' => 'USD'
                         ],
                         [
-                            'amount' => 222,
-                            'currency' => 'RUB'
+                            'Amount' => 222,
+                            'Currency' => 'RUB'
                         ],
                     ]),
-                    'money' => 1,
-                    'money___amount' => 100,
-                    'money___currency' => 'RUB',
-                    'nested' => 1,
-                    'nested___money' => 1,
-                    'nested___money___amount' => 1000,
-                    'nested___money___currency' => 'USD',
-                    'nested___array' => json_encode([
+                    'Money' => 1,
+                    'Money___Amount' => 100,
+                    'Money___Currency' => 'RUB',
+                    'Nested' => 1,
+                    'Nested___Money' => 1,
+                    'Nested___Money___Amount' => 1000,
+                    'Nested___Money___Currency' => 'USD',
+                    'Nested___Array' => json_encode([
                         'one' => 11,
                         'two' => 22,
                         'array' => [11, 22, 33]
                     ]),
-                    'nested_must' => 1,
-                    'nested_must___money' => 1,
-                    'nested_must___money___amount' => 7777,
-                    'nested_must___money___currency' => 'UAH',
-                    'nested_must___array' => json_encode([
+                    'Nested_must' => 1,
+                    'Nested_must___Money' => 1,
+                    'Nested_must___Money___Amount' => 7777,
+                    'Nested_must___Money___Currency' => 'UAH',
+                    'Nested_must___Array' => json_encode([
                         'one' => 111,
                         'two' => 222,
                         'array' => [111, 222, 333]

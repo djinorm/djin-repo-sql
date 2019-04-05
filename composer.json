@@ -12,14 +12,23 @@
             "role": "Main developer"
         }
     ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../djin",
+            "options": {
+                "symlink": false
+            }
+        }
+    ],
     "require": {
         "php": ">=7.2.0",
         "ext-PDO": "*",
         "ext-json": "*",
-        "djinorm/djin": "^6.0",
-        "djinorm/djin-filter-sort-paginate": "^1.1",
+        "djinorm/djin": "dev-ref2",
         "aura/sql": "^2.5",
-        "aura/sqlquery": "^2.7"
+        "aura/sqlquery": "^2.7",
+        "adbario/php-dot-notation": "^2.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.1",

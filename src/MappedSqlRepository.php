@@ -37,7 +37,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
 
     abstract protected function map(): array;
 
-    public function getMappersHandler(): MappersHandlerInterface
+    public function getMappersHandler(): MappersHandler
     {
         if (null === $this->mapperHandler) {
             $this->mapperHandler = new MappersHandler(static::getModelClass(), $this->map());
@@ -56,21 +56,6 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
     }
 
     /**
-     * Возвращает алиас, имя поля в базе по имени поля в модели и преобразовывает его с использованием
-     * @see getNotationString()
-     * @param string $modelProperty
-     * @return string
-     */
-    public function getAlias(string $modelProperty): string
-    {
-        $alias = $this->getMappersHandler()->getModelPropertyToDbAlias($modelProperty);
-        if ($alias === null) {
-            $alias = $modelProperty;
-        }
-        return str_replace('.', $this->getNotationString(), $alias);
-    }
-
-    /**
      * Возвращает имя поля id в базе
      * @return string
      */
@@ -78,7 +63,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
     {
         /** @var ModelInterface $class */
         $class = $this->getModelClass();
-        return $this->getAlias($class::getModelIdPropertyName());
+        return $class::getModelIdPropertyName();
     }
 
     /**
@@ -140,7 +125,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
 
         foreach ($data as $key => $value) {
             $path = $prefix . $key;
-            $mapper = $this->getMappersHandler()->getMapperByDbAlias($path);
+            $mapper = $this->getMappersHandler()->getMapperByProperty($path);
 
             if ($mapper instanceof ArrayMapperInterface) {
                 if (is_array($value)) {
@@ -163,15 +148,9 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
                     $nullCheckerArray = [];
                 }
 
-                if (null === $value) {
-                    $value = array_fill_keys(
-                        array_keys($mapper->getNestedMappersHandler()->getDbAliasesToModelProperties()),
-                        null
-                    );
-                }
-
-                $nestedData = array_merge($nullCheckerArray, (new Dot([$key => $value]))->flatten('.'));
-                $data = array_merge($data, $nestedData);
+                $scheme = new Dot([$key => $mapper->getNestedMappersHandler()->getScheme()]);
+                $nestedData = array_merge($nullCheckerArray, ($scheme->flatten('.')));
+                $data = array_merge($nestedData, $data);
             }
         }
     }
@@ -180,6 +159,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
      * Превращает массив в объект нужного класса
      * @param array $data
      * @return ModelInterface
+     * @throws \ReflectionException
      */
     protected function hydrate(array $data): ModelInterface
     {
@@ -228,7 +208,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         krsort($nestedNulls);
         foreach ($nestedNulls as $key => $value) {
             if ((int) $value < 1) {
-                $mapper = $this->getMappersHandler()->getMapperByDbAlias($key);
+                $mapper = $this->getMappersHandler()->getMapperByProperty($key);
                 if ($mapper->isNullAllowed()) {
                     $data->set($key, null);
                 }
@@ -238,7 +218,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
         //Массивы в плоском виде в таблице реляционной БД можно хранить только в виде json, поэтому
         //мы смотрим на мапперы, реализующие ArrayMapperInterface и делаем для этих данных json_decode
         foreach ($data->flatten('.') as $key => $value) {
-            $mapper = $this->getMappersHandler()->getMapperByDbAlias($key);
+            $mapper = $this->getMappersHandler()->getMapperByProperty($key);
             if ($mapper instanceof ArrayMapperInterface) {
                 if (is_string($value)) {
                     $value = json_decode($value, true);
@@ -247,7 +227,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
             }
         }
 
-        return array_merge($this->getScheme()->all(), $data->all());
+        return $data->all();
     }
 
     /**
@@ -258,10 +238,7 @@ abstract class MappedSqlRepository extends SqlRepository implements MappedReposi
      */
     protected function getScheme(): Dot
     {
-        $db2model = $this->getMappersHandler()->getDbAliasesToModelProperties();
-        $scheme = array_map(function () {
-            return null;
-        }, $db2model);
+        $scheme = $this->getMappersHandler()->getScheme();
         return new Dot($this->fromDotToArray($scheme));
     }
 

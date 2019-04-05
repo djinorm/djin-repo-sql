@@ -26,9 +26,6 @@ class SimpleSqlRepoTest extends DbTestCase
     /** @var SimpleSqlRepo */
     private $repo;
 
-    /** @var FilterSortPaginate */
-    private $fsp;
-
     protected function setUp()
     {
         parent::setUp();
@@ -37,15 +34,6 @@ class SimpleSqlRepoTest extends DbTestCase
             $this->getQueryFactory(),
             new MemoryIdGenerator(100)
         );
-
-        $sort = new Sort();
-        $sort->add('id', Sort::SORT_DESC);
-        $sort->add('name', Sort::SORT_ASC);
-
-        $this->fsp = new FilterSortPaginate(new Paginate(1, 5), $sort, new AndFilter([
-            new WildcardFilter('name', '*th'),
-            new CompareFilter('id', CompareFilter::GREAT_THAN, 1)
-        ]));
     }
 
     public function testFindById()
@@ -86,18 +74,6 @@ class SimpleSqlRepoTest extends DbTestCase
 
         $this->assertInstanceOf(Model::class, $models[1]);
         $this->assertEquals(2, $models[1]->getId()->toScalar());
-    }
-
-    public function testFindWithFilterSortPaginate()
-    {
-        /** @var Model[]|array $models */
-        $models = $this->repo->findWithFilterSortPaginate($this->fsp);
-        $this->assertCount(5, $models);
-    }
-
-    public function testCountByFilterSortPaginate()
-    {
-        $this->assertEquals(7, $this->repo->countByFilterSortPaginate($this->fsp));
     }
 
     public function testInsert()
