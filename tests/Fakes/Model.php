@@ -10,12 +10,9 @@ namespace DjinORM\Repositories\Sql\Fakes;
 
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Model\ModelInterface;
-use DjinORM\Djin\Model\ModelTrait;
 
 class Model implements ModelInterface
 {
-
-    use ModelTrait;
 
     /** @var Id */
     public $id;
@@ -23,25 +20,15 @@ class Model implements ModelInterface
     /** @var string */
     public $name;
 
-    /** @var array */
-    public $Array;
-
-    /** @var Money */
-    public $Money;
-
-    /** @var Money[] */
-    public $Balances;
-
-    /** @var NestedModel */
-    public $Nested;
-
-    /** @var NestedModel */
-    public $Nested_must;
-
     public function __construct($id = null, string $name = '')
     {
         $this->id = new Id($id);
         $this->name = $name;
+    }
+
+    public function getId(): Id
+    {
+        return $this->id;
     }
 
     public static function getModelName(): string

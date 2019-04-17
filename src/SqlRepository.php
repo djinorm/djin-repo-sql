@@ -15,14 +15,17 @@ use Aura\SqlQuery\Common\SelectInterface;
 use Aura\SqlQuery\Common\UpdateInterface;
 use Aura\SqlQuery\QueryFactory;
 use Aura\SqlQuery\QueryInterface;
-use DjinORM\Components\FilterSortPaginate\FilterSortPaginate;
+use DjinORM\Djin\Exceptions\InvalidArgumentException;
+use DjinORM\Djin\Exceptions\LogicException;
+use DjinORM\Djin\Exceptions\MismatchModelException;
+use DjinORM\Djin\Exceptions\NotPermanentIdException;
 use DjinORM\Djin\Helpers\DjinHelper;
 use DjinORM\Djin\Id\Id;
 use DjinORM\Djin\Id\IdGeneratorInterface;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Djin\Repository\RepositoryInterface;
 use DjinORM\Repositories\Sql\Exceptions\PDOExceptionWithSql;
-use DjinORM\Repositories\Sql\Components\FilterSortPaginateQueryBuilder;
+use PDOException;
 use PDOStatement;
 
 abstract class SqlRepository implements RepositoryInterface
@@ -64,9 +67,9 @@ abstract class SqlRepository implements RepositoryInterface
     /**
      * @param $id
      * @return ModelInterface|null
-     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
-     * @throws \DjinORM\Djin\Exceptions\MismatchModelException
-     * @throws \DjinORM\Djin\Exceptions\NotPermanentIdException
+     * @throws InvalidArgumentException
+     * @throws MismatchModelException
+     * @throws NotPermanentIdException
      */
     public function findById($id): ?ModelInterface
     {
@@ -79,39 +82,12 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->fetchAndPopulateOne($select);
     }
 
-    /**
-     * @param FilterSortPaginate $fsp
-     * @return ModelInterface[]
-     * @throws \DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException
-     */
-    public function findWithFilterSortPaginate(FilterSortPaginate $fsp): array
-    {
-        $fspBuilder = new FilterSortPaginateQueryBuilder($fsp);
-        return $this->fetchAndPopulateMany($fspBuilder->buildQuery($this->select()));
-    }
-
-    /**
-     * @param FilterSortPaginate $fsp
-     * @return int
-     * @throws \DjinORM\Components\FilterSortPaginate\Exceptions\UnsupportedFilterException
-     */
-    public function countByFilterSortPaginate(FilterSortPaginate $fsp): int
-    {
-        $fspCount = clone $fsp;
-        $fspCount->setSort(null);
-        $fspCount->setPaginate(null);
-
-        $fspBuilder = new FilterSortPaginateQueryBuilder($fspCount);
-        $select = $fspBuilder->buildQuery($this->select(['COUNT(*)']));
-
-        return (int) $this->selectStatement($select)->fetchColumn();
-    }
 
     /**
      * @param ModelInterface $model
      * @return mixed|void
-     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
-     * @throws \DjinORM\Djin\Exceptions\LogicException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
     public function save(ModelInterface $model)
     {
@@ -125,8 +101,8 @@ abstract class SqlRepository implements RepositoryInterface
     /**
      * @param ModelInterface $model
      * @return mixed|void
-     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
-     * @throws \DjinORM\Djin\Exceptions\LogicException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
     public function insert(ModelInterface $model)
     {
@@ -169,8 +145,8 @@ abstract class SqlRepository implements RepositoryInterface
     /**
      * @param ModelInterface $model
      * @return Id
-     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
-     * @throws \DjinORM\Djin\Exceptions\LogicException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
     public function setPermanentId(ModelInterface $model): Id
     {
@@ -219,7 +195,7 @@ abstract class SqlRepository implements RepositoryInterface
     {
         try {
             $stm = $this->pdo->perform($query->getStatement(), $query->getBindValues());
-        } catch (\PDOException $exception) {
+        } catch (PDOException $exception) {
             throw new PDOExceptionWithSql($query->getStatement(), $query->getBindValues(), $exception);
         }
         return $stm;
@@ -299,27 +275,37 @@ abstract class SqlRepository implements RepositoryInterface
         return $this->builder->newSelect()->cols($cols)->from($this->getTableName());
     }
 
-    protected function getIdName(): string
-    {
-        /** @var ModelInterface $class */
-        $class = $this->getModelClass();
-        return $class::getModelIdPropertyName();
-    }
+    /**
+     * @return string имя поля с ID в базе
+     */
+    abstract protected function getIdName(): string;
 
 
     ## Hydrate & Extract ##
 
 
+    /**
+     * Преобразовывает массив данных из базы в модель
+     * @param array $data
+     * @return ModelInterface
+     */
     abstract protected function hydrate(array $data): ModelInterface;
 
+    /**
+     * Преобразовывает модель в массив для сохранения в базу
+     * @param ModelInterface $model
+     * @return array
+     */
     abstract protected function extract(ModelInterface $model): array;
 
-
-    ## Название таблицы и класса модели ##
-
-
+    /**
+     * @return string имя таблицы
+     */
     abstract protected function getTableName(): string;
 
+    /**
+     * @return string имя класса модели
+     */
     abstract public static function getModelClass(): string;
 
 

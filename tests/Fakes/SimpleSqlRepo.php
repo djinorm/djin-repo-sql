@@ -9,6 +9,8 @@ namespace DjinORM\Repositories\Sql\Fakes;
 
 
 use Aura\SqlQuery\QueryInterface;
+use DjinORM\Djin\Exceptions\InvalidArgumentException;
+use DjinORM\Djin\Exceptions\LogicException;
 use DjinORM\Djin\Model\ModelInterface;
 use DjinORM\Repositories\Sql\SqlRepository;
 use PDOStatement;
@@ -46,8 +48,8 @@ class SimpleSqlRepo extends SqlRepository
     /**
      * @param array $data
      * @return ModelInterface
-     * @throws \DjinORM\Djin\Exceptions\InvalidArgumentException
-     * @throws \DjinORM\Djin\Exceptions\LogicException
+     * @throws InvalidArgumentException
+     * @throws LogicException
      */
     protected function hydrate(array $data): ModelInterface
     {
@@ -77,5 +79,13 @@ class SimpleSqlRepo extends SqlRepository
     public static function getModelClass(): string
     {
         return Model::class;
+    }
+
+    /**
+     * @return string имя поля с ID в базе
+     */
+    protected function getIdName(): string
+    {
+        return 'id';
     }
 }

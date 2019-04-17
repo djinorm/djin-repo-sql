@@ -16,8 +16,7 @@
         "php": ">=7.2.0",
         "ext-PDO": "*",
         "ext-json": "*",
-        "djinorm/djin": "^6.0",
-        "djinorm/djin-filter-sort-paginate": "^1.1",
+        "djinorm/djin": "^7.0",
         "aura/sql": "^2.5",
         "aura/sqlquery": "^2.7"
     },
