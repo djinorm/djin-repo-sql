@@ -16,6 +16,7 @@
         "php": ">=7.2.0",
         "ext-PDO": "*",
         "ext-json": "*",
+        "ext-mbstring": "*",
         "djinorm/djin": "^7.0",
         "aura/sql": "^2.5",
         "aura/sqlquery": "^2.7"
